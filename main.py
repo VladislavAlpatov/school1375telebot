@@ -55,11 +55,9 @@ class Bot(telebot.TeleBot):
                 self.send_message(call.message.chat.id, f'Вы учитесь в 10 классе, теперь выберите'
                                                         f' букву класса.',
                                   reply_markup=RangeNumberInLineButton(tenCharList))
+
             elif call.data == '11':
-                self.send_message(call.message.chat.id, f'Вы учитесь в 10 классе, теперь выберите'
-                                                        f' букву класса.',
-                                  reply_markup=RangeNumberInLineButton(tenCharList))
-                self.send_message(call.message.chat.id, f'Вы учитесь в 10 классе, теперь выберите'
+                self.send_message(call.message.chat.id, f'Вы учитесь в 11 классе, теперь выберите'
                                                         f' букву класса.',
                                   reply_markup=RangeNumberInLineButton(elevenCharList))
 
@@ -75,9 +73,11 @@ class Bot(telebot.TeleBot):
 
             elif message.text == '📰Новости📰':
                 pass
+            else:
+                self.send_message(message.chat.id, 'Пожалуйста выберите класс в котором вы обучаетесь.')
 
         self.polling()
 
 
 if __name__ == '__main__':
-    Bot('1495944770:AAFJJKzDhukjYLUIh9bCWYbxdYcxcd9H9OE').run()
+    Bot('xxx').run()
