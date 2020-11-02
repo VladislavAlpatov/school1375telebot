@@ -21,4 +21,4 @@ class News:
         latsnewsblock = self.__data.find('div', {'class': 'kris-news-tit'})
         data = BeautifulSoup(requests.get(self.__site + latsnewsblock.find('a')['href'],
                                           headers=self.heard).text, 'html.parser')
-        return  data.find('div', {'class': 'kris-redaktor-format'}).text.replace('\n', '')
+        return data.find('div', {'class': 'kris-redaktor-format'}).text[:-1]
