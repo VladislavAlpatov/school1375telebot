@@ -100,4 +100,3 @@ class Bot(telebot.TeleBot):
 
 if __name__ == '__main__':
     Bot('xxx').run()
-    Bot('xxx').run()
