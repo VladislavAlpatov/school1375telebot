@@ -60,6 +60,42 @@ class Bot(telebot.TeleBot):
                 self.send_message(call.message.chat.id, f'Вы учитесь в 11 классе, теперь выберите'
                                                         f' букву класса.',
                                   reply_markup=RangeNumberInLineButton(elevenCharList))
+            # блок для 9 классов
+
+            elif call.data == '9-A':
+                pass
+            elif call.data == '9-Б':
+                pass
+            elif call.data == '9-И':
+                pass
+            elif call.data == '9-Л':
+                pass
+            elif call.data == '9-С':
+                pass
+            elif call.data == '9-М':
+                pass
+            elif call.data == '9-Т':
+                pass
+            elif call.data == '9-Э':
+                pass
+            # 10 классы
+            elif call.data == '10-A':
+                pass
+            elif call.data == '10-Б':
+                pass
+            elif call.data == '10-И':
+                pass
+            elif call.data == '9-Л':
+                pass
+            elif call.data == '9-С':
+                pass
+            elif call.data == '9-Э':
+                pass
+            elif call.data == '9-М':
+                pass
+
+            else:
+                pass
 
         @self.message_handler(content_types=['text'])
         def handle_message(message):
@@ -74,10 +110,10 @@ class Bot(telebot.TeleBot):
             elif message.text == '📰Новости📰':
                 pass
             else:
-                self.send_message(message.chat.id, 'Пожалуйста выберите класс в котором вы обучаетесь.')
+                self.send_message(message.chat.id, 'Жаль, что я плохо понимаю людей😥')
 
         self.polling()
 
 
 if __name__ == '__main__':
-    Bot('xxx').run()
+    Bot('1495944770:AAFQ_mzCVN4u9UJzqlEJc_m_LhEysTZLiqI').run()
