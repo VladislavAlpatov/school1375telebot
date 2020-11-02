@@ -3,10 +3,7 @@ import telebot
 from telebot import types
 from modules import subtext
 from modules import siteparser
-
-x = siteparser.News()
-x.getLastNewsTitle()
-x.getLastNewsText()
+from PIL import Image
 
 
 class MainMenuButton(types.ReplyKeyboardMarkup):
@@ -35,10 +32,10 @@ class Bot(telebot.TeleBot):
 
     def __init__(self, token: str):
         super().__init__(token)
-        self.__nineCharList = ['9-А', '9-Б', '9-И', '9-M', '9-C', '9-Т', '9-Э']
-        self.__tenCharList = ['10-А', '10-Б', '10-И', '10-Л', '10-C', '10-Э', '10-M']
-        self.__elevenCharList = ['11-А', '11-Б', '11-Г', '11-Л', '11-C', '11-И', '11-M']
-
+        self.__nineCharList = ('9-А', '9-Б', '9-И', '9-M', '9-C', '9-Т', '9-Э')
+        self.__tenCharList = ('10-А', '10-Б', '10-И', '10-Л', '10-C', '10-Э', '10-M')
+        self.__elevenCharList = ('11-А', '11-Б', '11-Г', '11-Л', '11-C', '11-И', '11-M')
+        self.__calbacks = ('9', '10', '11')
         print('Запущен!')
 
     def __str__(self):
@@ -57,54 +54,28 @@ class Bot(telebot.TeleBot):
 
             if call.data == '9':
                 self.send_message(call.message.chat.id, f'Вы учитесь в 9 классе, теперь выберите'
-                                                        f' букву класса.',
+                                                        ' букву класса.',
                                   reply_markup=RangeNumberInLineButton(self.__nineCharList))
 
             elif call.data == '10':
                 self.send_message(call.message.chat.id, f'Вы учитесь в 10 классе, теперь выберите'
-                                                        f' букву класса.',
+                                                        ' букву класса.',
                                   reply_markup=RangeNumberInLineButton(self.__tenCharList))
 
             elif call.data == '11':
                 self.send_message(call.message.chat.id, f'Вы учитесь в 11 классе, теперь выберите'
-                                                        f' букву класса.',
+                                                        ' букву класса.',
                                   reply_markup=RangeNumberInLineButton(self.__elevenCharList))
             # блок для 9 классов
 
-            elif call.data == '9-A':
-                pass
-            elif call.data == '9-Б':
-                pass
-            elif call.data == '9-И':
-                pass
-            elif call.data == '9-Л':
-                pass
-            elif call.data == '9-С':
-                pass
-            elif call.data == '9-М':
-                pass
-            elif call.data == '9-Т':
-                pass
-            elif call.data == '9-Э':
-                pass
-            # 10 классы
-            elif call.data == '10-A':
-                pass
-            elif call.data == '10-Б':
-                pass
-            elif call.data == '10-И':
-                pass
-            elif call.data == '10-Л':
-                pass
-            elif call.data == '10-С':
-                pass
-            elif call.data == '10-Э':
-                pass
-            elif call.data == '10-М':
-                pass
-
             else:
-                pass
+                try:
+                    print(f'media/images/расписания/{call.data}.jpg')
+                    with open(f'media/images/расписания/{call.data}.jpg', 'rb') as f:
+                        self.send_message(call.message.chat.id, f"Загружаю расписание для класса {call.data}...")
+                        self.send_photo(call.message.chat.id, f)
+                except FileNotFoundError:
+                    self.send_message(call.message.chat.id, f"Ой, я не нашёл расписание для класса {call.data} 😟")
 
         @self.message_handler(content_types=['text'])
         def handle_message(message):
@@ -128,4 +99,5 @@ class Bot(telebot.TeleBot):
 
 
 if __name__ == '__main__':
+    Bot('xxx').run()
     Bot('xxx').run()
