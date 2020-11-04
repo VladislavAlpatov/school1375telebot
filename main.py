@@ -32,7 +32,7 @@ class Bot(telebot.TeleBot):
 
     def __init__(self, token: str):
         super().__init__(token)
-        self.__nineCharList = ('9-А', '9-Б', '9-И', '9-M', '9-C', '9-Т', '9-Э')
+        self.__nineCharList = ('9-А', '9-Б', '9-И', '9-M', '9-C', '9-Э')
         self.__tenCharList = ('10-А', '10-Б', '10-И', '10-Л', '10-C', '10-Э', '10-M')
         self.__elevenCharList = ('11-А', '11-Б', '11-Г', '11-Л', '11-C', '11-И', '11-M')
         self.__calbacks = ('9', '10', '11')
