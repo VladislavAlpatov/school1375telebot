@@ -28,9 +28,10 @@ class Bot(telebot.TeleBot):
 
     def __init__(self, token: str):
         super().__init__(token)
-        self.__nineCharList = ('9-А', '9-Б', '9-И', '9-M', '9-C', '9-Э')
-        self.__tenCharList = ('10-А', '10-Б', '10-И', '10-Л', '10-C', '10-Э', '10-M')
-        self.__elevenCharList = ('11-А', '11-Б', '11-Г', '11-Л', '11-C', '11-И', '11-M')
+        self.__nineCharList = ('9-А', '9-Б', '9-И', '9-М', '9-Э')
+        self.__tenCharList = ('10-А', '10-Б', '10-И', '10-Л', '10-Э', '10-М')
+        self.__elevenCharList = ('11-А', '11-Б', '11-Г', '11-Л', '11-С', '11-И', '11-М')
+
         self.__callbacks = ('9', '10', '11')
         print('Запущен!')
 
@@ -113,15 +114,18 @@ class Bot(telebot.TeleBot):
                     parse_mode='Markdown')
 
             elif message.text == '😺Котики😺':
-                image = requests.get('https://thiscatdoesnotexist.com/')
+                try:
+                    image = requests.get('https://thiscatdoesnotexist.com/')
 
-                with open(f'{message.chat.id}.jpg', 'wb') as f:
-                    f.write(image.content)
+                    with open(f'{message.chat.id}.jpg', 'wb') as f:
+                        f.write(image.content)
 
-                with open(f'{message.chat.id}.jpg', 'rb') as f:
-                    self.send_photo(message.chat.id, f)
+                    with open(f'{message.chat.id}.jpg', 'rb') as f:
+                        self.send_photo(message.chat.id, f)
 
-                os.remove(f'{message.chat.id}.jpg')
+                    os.remove(f'{message.chat.id}.jpg')
+                except PermissionError:
+                    self.send_message(message.chat.id, "Вы отправляете сообщения слишком быстро!")
 
             else:
                 self.send_message(message.chat.id, 'Жаль, что я плохо понимаю людей😥')
@@ -130,4 +134,4 @@ class Bot(telebot.TeleBot):
 
 
 if __name__ == '__main__':
-    Bot(os.environ.get('TOKEN')).run()
+    Bot('1347415058:AAGlNcGru12rOyUZFp65Yl6iAAzJvzPzTl8').run()

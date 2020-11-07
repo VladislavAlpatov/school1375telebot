@@ -29,15 +29,16 @@ class Covid19:
         self.heard = {'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:75.0) Gecko/20100101 Firefox/75.0'}
         self.__data = BeautifulSoup(requests.get('https://xn--80aesfpebagmfblc0a.xn--p1ai/',
                                                  headers=self.heard).text, 'html.parser')
+        self.__blocks = self.__data.findAll('div', {'class': 'cv-countdown__item-value'})
 
     def getAllInfected(self):
-        return self.__data.findAll('div', {'class': 'cv-countdown__item-value'})[1].text
+        return self.__blocks[1].text
 
     def getInfectedInLastDay(self):
-        return self.__data.findAll('div', {'class': 'cv-countdown__item-value'})[2].text
+        return self.__blocks[2].text
 
     def getAllHealed(self):
-        return self.__data.findAll('div', {'class': 'cv-countdown__item-value'})[3].text
+        return self.__blocks[3].text
 
     def getAllDied(self):
-        return self.__data.findAll('div', {'class': 'cv-countdown__item-value'})[4].text
+        return self.__blocks[4].text
