@@ -43,7 +43,7 @@ class Bot(telebot.TeleBot):
         def start_message(message):
             name = message.from_user.first_name
             self.send_message(message.chat.id, subtext.help_message.replace("%name%", name),
-                              reply_markup=RangeNumberReplyButton(['📚Школа📚', 'Прочее']))
+                              reply_markup=RangeNumberReplyButton(['📚Школа📚', '🎲Прочее🎲']))
 
         @self.callback_query_handler(func=lambda call: True)
         def callback_inline(call):
@@ -97,12 +97,20 @@ class Bot(telebot.TeleBot):
 
             elif message.text == '🎲Прочее🎲':
                 self.send_message(message.chat.id, 'Вы перешли в раздел "🎲Прочее🎲".',
-                                  reply_markup=RangeNumberReplyButton(['🤣Анекдоты🤣',
-                                                                       '😺Котики😺',
-                                                                       '🔄Главное меню🔄']))
+                                  reply_markup=RangeNumberReplyButton([
+                                      '⚠COVID-19⚠',
+                                      '😺Котики😺',
+                                      '🔄Главное меню🔄']))
 
-            elif message.text == '🤣Анекдоты🤣':
-                self.send_message(message.chat.id, siteparser.Jokes().getJoke())
+            elif message.text == '⚠COVID-19⚠':
+                site = siteparser.Covid19()
+                self.send_message(
+                    message.chat.id,
+                    f"*COVID*\n\nВсего заболело: *{site.getAllInfected()}* человек.\n"
+                    f"Всего умерло: *{site.getAllDied()}* человек.\n"
+                    f"Зарозилось за день: *{site.getInfectedInLastDay()}* человек.\n"
+                    f"Выздаровело всего: *{site.getAllHealed()}* человек.",
+                    parse_mode='Markdown')
 
             elif message.text == '😺Котики😺':
                 image = requests.get('https://thiscatdoesnotexist.com/')
