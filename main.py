@@ -3,7 +3,9 @@ import telebot
 from telebot import types
 from modules import subtext
 from modules import siteparser
+import requests
 from PIL import Image
+import os
 
 
 class RangeNumberInLineButton(types.InlineKeyboardMarkup):
@@ -80,12 +82,14 @@ class Bot(telebot.TeleBot):
 
             elif message.text == '📚Школа📚':
                 self.send_message(message.chat.id, 'Вы перешли в "Школьный" раздел.',
-                                  reply_markup=RangeNumberReplyButton(['📃Расписание📃', '📰Новости📰',
+                                  reply_markup=RangeNumberReplyButton(['📃Расписание📃',
+                                                                       '📰Новости📰',
                                                                        '🔄Главное меню🔄']))
 
             elif message.text == '🔄Главное меню🔄':
                 self.send_message(message.chat.id, 'Вы вернулись в главное меню.',
-                                  reply_markup=RangeNumberReplyButton(['📚Школа📚', '🎲Прочее🎲']))
+                                  reply_markup=RangeNumberReplyButton(['📚Школа📚',
+                                                                       '🎲Прочее🎲']))
 
             elif message.text == '📰Новости📰':
                 site = siteparser.News()
@@ -94,9 +98,23 @@ class Bot(telebot.TeleBot):
 
             elif message.text == '🎲Прочее🎲':
                 self.send_message(message.chat.id, 'Вы перешли в раздел "🎲Прочее🎲".',
-                                  reply_markup=RangeNumberReplyButton(['🤣Анекдоты🤣', '🔄Главное меню🔄']))
+                                  reply_markup=RangeNumberReplyButton(['🤣Анекдоты🤣',
+                                                                       '😺Котики😺',
+                                                                       '🔄Главное меню🔄']))
+
             elif message.text == '🤣Анекдоты🤣':
                 self.send_message(message.chat.id, siteparser.Jokes().getJoke())
+
+            elif message.text == '😺Котики😺':
+                image = requests.get('https://thiscatdoesnotexist.com/')
+
+                with open(f'{message.chat.id}.jpg', 'wb') as f:
+                    f.write(image.content)
+
+                with open(f'{message.chat.id}.jpg', 'rb') as f:
+                    self.send_photo(message.chat.id, f)
+
+                os.remove(f'{message.chat.id}.jpg')
 
             else:
                 self.send_message(message.chat.id, 'Жаль, что я плохо понимаю людей😥')
