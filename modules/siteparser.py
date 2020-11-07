@@ -22,3 +22,15 @@ class News:
         data = BeautifulSoup(requests.get(self.__site + latsnewsblock.find('a')['href'],
                                           headers=self.heard).text, 'html.parser')
         return data.find('div', {'class': 'kris-redaktor-format'}).text[:-1]
+
+
+class Jokes:
+    """
+    Парсит с сайта https://nekdo.ru/random/ всякие шутки
+    """
+    def __init__(self):
+        self.heard = {'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:75.0) Gecko/20100101 Firefox/75.0'}
+        self.__data = BeautifulSoup(requests.get('https://nekdo.ru/random/', headers=self.heard).text, 'html.parser')
+
+    def getJoke(self):
+        return self.__data.find('div', {'class': 'text'}).text
