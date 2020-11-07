@@ -1,4 +1,3 @@
-# coding=utf-8
 import telebot
 from telebot import types
 from modules import subtext
@@ -66,10 +65,10 @@ class Bot(telebot.TeleBot):
 
             else:
                 try:
-                    print(f'media/images/расписания/{call.data}.jpg')
                     with open(f'media/images/расписания/{call.data}.jpg', 'rb') as f:
                         self.send_message(call.message.chat.id, f"Загружаю расписание для класса {call.data}...")
                         self.send_photo(call.message.chat.id, f)
+
                 except FileNotFoundError:
                     self.send_message(call.message.chat.id, f"Ой, я не нашёл расписание для класса {call.data} 😟")
 
@@ -123,4 +122,4 @@ class Bot(telebot.TeleBot):
 
 
 if __name__ == '__main__':
-    Bot('1347415058:AAFp6XsJgeyMaTCa1fK7A8G4qf-y20VjNno').run()
+    Bot(os.environ.get('TOKEN')).run()
