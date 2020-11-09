@@ -14,6 +14,7 @@ class RangeNumberInLineButton(types.InlineKeyboardMarkup):
             self.add(types.InlineKeyboardButton(text=str(number), callback_data=str(number)))
 
 
+
 class RangeNumberReplyButton(types.ReplyKeyboardMarkup):
     def __init__(self, numbers):
         super().__init__()
