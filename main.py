@@ -105,8 +105,8 @@ class Bot(telebot.TeleBot):
                     message.chat.id,
                     f"*COVID*\n\nВсего заболело: *{site.getAllInfected()}* человек.\n"
                     f"Всего умерло: *{site.getAllDied()}* человек.\n"
-                    f"Зарозилось за день: *{site.getInfectedInLastDay()}* человек.\n"
-                    f"Выздаровело всего: *{site.getAllHealed()}* человек.",
+                    f"🤒Зарозилось за день: *{site.getInfectedInLastDay()}* человек.🤒\n"
+                    f"😎Выздаровело всего: *{site.getAllHealed()}* человек.😎",
                     parse_mode='Markdown')
 
             elif message.text == '😺Котики😺':
