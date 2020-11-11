@@ -14,7 +14,6 @@ class RangeNumberInLineButton(types.InlineKeyboardMarkup):
             self.add(types.InlineKeyboardButton(text=str(number), callback_data=str(number)))
 
 
-
 class RangeNumberReplyButton(types.ReplyKeyboardMarkup):
     def __init__(self, numbers):
         super().__init__()
@@ -51,18 +50,15 @@ class Bot(telebot.TeleBot):
         def callback_inline(call):
 
             if call.data == '9':
-                self.send_message(call.message.chat.id, f'Вы учитесь в 9 классе, теперь выберите'
-                                                        ' букву класса.',
+                self.send_message(call.message.chat.id, f'Теперь выберите Ваш класс. 👇',
                                   reply_markup=RangeNumberInLineButton(self.__nineCharList))
 
             elif call.data == '10':
-                self.send_message(call.message.chat.id, f'Вы учитесь в 10 классе, теперь выберите'
-                                                        ' букву класса.',
+                self.send_message(call.message.chat.id, f'Теперь выберите Ваш класс. 👇',
                                   reply_markup=RangeNumberInLineButton(self.__tenCharList))
 
             elif call.data == '11':
-                self.send_message(call.message.chat.id, f'Вы учитесь в 11 классе, теперь выберите'
-                                                        ' букву класса.',
+                self.send_message(call.message.chat.id, f'Теперь выберите Ваш класс. 👇',
                                   reply_markup=RangeNumberInLineButton(self.__elevenCharList))
 
             else:
@@ -78,11 +74,11 @@ class Bot(telebot.TeleBot):
         def handle_message(message):
 
             if message.text == '📃Расписание📃':
-                self.send_message(message.chat.id, 'Пожалуйста выберите класс в котором вы обучаетесь.',
+                self.send_message(message.chat.id, 'Пожалуйста, выберите параллель, в которой Вы обучаетесь. 👇',
                                   reply_markup=RangeNumberInLineButton(range(9, 12)))
 
             elif message.text == '📚Школа📚':
-                self.send_message(message.chat.id, 'Вы перешли в "Школьный" раздел.',
+                self.send_message(message.chat.id, 'Вы находитесь в разделе «📚Школа📚».',
                                   reply_markup=RangeNumberReplyButton(['📃Расписание📃',
                                                                        '📰Новости📰',
                                                                        '🔄Главное меню🔄']))
@@ -98,9 +94,8 @@ class Bot(telebot.TeleBot):
                                   parse_mode='Markdown')
 
             elif message.text == '🎲Прочее🎲':
-                self.send_message(message.chat.id, 'Вы перешли в раздел "🎲Прочее🎲".',
+                self.send_message(message.chat.id, 'В находитесь в разделе «🎲Прочее 🎲».',
                                   reply_markup=RangeNumberReplyButton([
-                                      '⚠COVID-19⚠',
                                       '😺Котики😺',
                                       '🔄Главное меню🔄']))
 
@@ -126,7 +121,7 @@ class Bot(telebot.TeleBot):
 
                     os.remove(f'{message.chat.id}.jpg')
                 except PermissionError:
-                    self.send_message(message.chat.id, "Вы отправляете сообщения слишком быстро!")
+                    self.send_message(message.chat.id, "⛔️Вы отправляете сообщения слишком быстро!⛔️")
 
             else:
                 self.send_message(message.chat.id, 'Жаль, что я плохо понимаю людей😥')
