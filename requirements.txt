@@ -2,3 +2,5 @@ pyTelegramBotAPI
 requests
 Pillow
 bs4
+pyowm
+beautifulsoup4

@@ -2,9 +2,11 @@ import telebot
 from telebot import types
 from modules import subtext
 from modules import siteparser
+import pyowm
 import requests
 from PIL import Image
 import os
+from pyowm.utils.config import get_default_config
 
 
 class RangeNumberInLineButton(types.InlineKeyboardMarkup):
@@ -28,11 +30,24 @@ class Bot(telebot.TeleBot):
 
     def __init__(self, token: str):
         super().__init__(token)
+
         self.__nineCharList = ('9-А', '9-Б', '9-И', '9-М', '9-Э')
         self.__tenCharList = ('10-А', '10-Б', '10-И', '10-Л', '10-Э', '10-М')
         self.__elevenCharList = ('11-А', '11-Б', '11-Г', '11-Л', '11-С', '11-И', '11-М')
+        # разделы
+        self.__MiscDir = RangeNumberReplyButton(['🌤Погода🌤', '😺Котики😺', '🔄Главное меню🔄'])
+        self.__MainDir = RangeNumberReplyButton(['📚Школа📚', '🎲Прочее🎲'])
+        self.__SchoolDir = RangeNumberReplyButton(['📃Расписание📃', '📰Новости📰', '🔄Главное меню🔄'])
 
+        # погодник
+        presets = get_default_config()
+        presets['language'] = 'ru'
+        self.__owm = pyowm.OWM(os.environ.get('OWN_TOKEN'), presets)
+
+        # классы
         self.__callbacks = ('9', '10', '11')
+
+        del presets
         print('Запущен!')
 
     def __str__(self):
@@ -44,7 +59,7 @@ class Bot(telebot.TeleBot):
         def start_message(message):
             name = message.from_user.first_name
             self.send_message(message.chat.id, subtext.help_message.replace("%name%", name),
-                              reply_markup=RangeNumberReplyButton(['📚Школа📚', '🎲Прочее🎲']))
+                              reply_markup=self.__MiscDir)
 
         @self.callback_query_handler(func=lambda call: True)
         def callback_inline(call):
@@ -79,14 +94,11 @@ class Bot(telebot.TeleBot):
 
             elif message.text == '📚Школа📚':
                 self.send_message(message.chat.id, 'Вы находитесь в разделе «📚Школа📚».',
-                                  reply_markup=RangeNumberReplyButton(['📃Расписание📃',
-                                                                       '📰Новости📰',
-                                                                       '🔄Главное меню🔄']))
+                                  reply_markup=self.__SchoolDir)
 
             elif message.text == '🔄Главное меню🔄':
                 self.send_message(message.chat.id, 'Вы вернулись в главное меню.',
-                                  reply_markup=RangeNumberReplyButton(['📚Школа📚',
-                                                                       '🎲Прочее🎲']))
+                                  reply_markup=self.__MainDir)
 
             elif message.text == '📰Новости📰':
                 site = siteparser.News()
@@ -95,9 +107,20 @@ class Bot(telebot.TeleBot):
 
             elif message.text == '🎲Прочее🎲':
                 self.send_message(message.chat.id, 'В находитесь в разделе «🎲Прочее 🎲».',
-                                  reply_markup=RangeNumberReplyButton([
-                                      '😺Котики😺',
-                                      '🔄Главное меню🔄']))
+                                  reply_markup=self.__MiscDir)
+
+            elif message.text == '🌤Погода🌤':
+                try:
+                    mgr = self.__owm.weather_manager()
+                    w = mgr.weather_at_place('Москва').weather
+                    self.send_message(message.chat.id, f"*Погода на сегодня.*\n\n"
+                                                       f"*Статус:* {w.detailed_status}\n"
+                                                       f"*Температура:* {w.temperature('celsius')['temp']} ℃\n"
+                                                       f"*Скорость ветра:* {w.wind()['speed']} м\\с\n"
+                                                       f"*Влажность:* {w.humidity}%\n*Облачность:* {w.clouds}%",
+                                      parse_mode='Markdown')
+                except Exception:
+                    self.send_message(message.chat.id, '⛔Увы я не смог получить данные о погоде, попробуйте позже!⛔')
 
             elif message.text == '⚠COVID-19⚠':
                 site = siteparser.Covid19()
@@ -121,7 +144,7 @@ class Bot(telebot.TeleBot):
 
                     os.remove(f'{message.chat.id}.jpg')
                 except PermissionError:
-                    self.send_message(message.chat.id, "⛔️Вы отправляете сообщения слишком быстро!⛔️")
+                    self.send_message(message.chat.id, "⛔Вы отправляете сообщения слишком быстро!⛔")
 
             else:
                 self.send_message(message.chat.id, 'Жаль, что я плохо понимаю людей😥')
@@ -131,3 +154,4 @@ class Bot(telebot.TeleBot):
 
 if __name__ == '__main__':
     Bot(os.environ.get('TOKEN')).run()
+    # os.environ.get('TOKEN')
