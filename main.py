@@ -42,11 +42,6 @@ class Bot(telebot.TeleBot):
         self.__MainDir = RangeNumberReplyButton(['📚Школа📚', '🎲Прочее🎲'])
         self.__SchoolDir = RangeNumberReplyButton(['📃Расписание📃', '📰Новости📰', '🔄Главное меню🔄'])
 
-        # погодник
-        presets = get_default_config()
-        presets['language'] = 'ru'
-        self.__owm = pyowm.OWM(os.environ.get('OWN_TOKEN'), presets)
-        del presets
 
         # список админов
         self.__admins = (852250251, 500132649)
