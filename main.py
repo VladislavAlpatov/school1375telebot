@@ -7,6 +7,8 @@ import requests
 from PIL import Image
 import os
 from pyowm.utils.config import get_default_config
+from modules import dbcontrol
+from hashlib import sha256
 
 
 class RangeNumberInLineButton(types.InlineKeyboardMarkup):
@@ -34,21 +36,21 @@ class Bot(telebot.TeleBot):
         self.__nineCharList = ('9-А', '9-Б', '9-И', '9-М', '9-Э')
         self.__tenCharList = ('10-А', '10-Б', '10-И', '10-Л', '10-Э', '10-М')
         self.__elevenCharList = ('11-А', '11-Б', '11-Г', '11-Л', '11-С', '11-И', '11-М')
+        self.__callbacks = ('9', '10', '11')
+
         # разделы
         self.__MiscDir = RangeNumberReplyButton(['🌤Погода🌤', '😺Котики😺', '🔄Главное меню🔄'])
         self.__MainDir = RangeNumberReplyButton(['📚Школа📚', '🎲Прочее🎲'])
         self.__SchoolDir = RangeNumberReplyButton(['📃Расписание📃', '📰Новости📰', '🔄Главное меню🔄'])
 
         # погодник
-        presets = get_default_config()
-        presets['language'] = 'ru'
-        self.__owm = pyowm.OWM(os.environ.get('OWN_TOKEN'), presets)
+        #presets = get_default_config()
+        #presets['language'] = 'ru'
+        #self.__owm = pyowm.OWM(os.environ.get('OWN_TOKEN'), presets)
+       # del presets
 
-        # классы
-        self.__callbacks = ('9', '10', '11')
-
-        del presets
-        print('Запущен!')
+        # список админов
+        self.__admins = (852250251, 500132649)
 
     def __str__(self):
         return f'Токен:{self.token}'
@@ -57,9 +59,43 @@ class Bot(telebot.TeleBot):
 
         @self.message_handler(commands=['start'])
         def start_message(message):
-            name = message.from_user.first_name
-            self.send_message(message.chat.id, subtext.help_message.replace("%name%", name),
-                              reply_markup=self.__MiscDir)
+            db = dbcontrol.DBcontrol("data_bases/banlist.db")
+
+            if not db.user_exists(message.from_user.id):
+                db.add_user(message.from_user.id, message.from_user.first_name)
+                self.send_message(message.chat.id, subtext.help_message.replace("%name%", message.from_user.first_name),
+                                  reply_markup=self.__MainDir)
+
+            else:
+                self.send_message(message.chat.id, "Вы уже отправляли комманду /start")
+
+            db.close()
+
+        @self.message_handler(commands=['ban'])
+        def ban_command(message):
+            if message.from_user.id in self.__admins:
+                try:
+                    db = dbcontrol.DBcontrol("data_bases/banlist.db")
+                    line = str(message.text).split(' ')
+                    db.set_ban_status(int(line[1]), True if line[2] == "true" else False)
+                except Exception as e:
+                    self.send_message(message.chat.id, f'⛔Не удалось произвести операциюю⛔ , код ошибки "{e}"')
+            else:
+                self.send_message(message.chat.id, "⛔В доступе отказано!⛔")
+
+        @self.message_handler(commands=['db'])
+        def dump_db(message):
+            if message.from_user.id in self.__admins:
+                try:
+                    line = str(message.text).split(' ')
+                    with open(f"data_bases/{line[1]}", 'rb') as f:
+                        self.send_document(message.chat.id, f)
+                except FileNotFoundError:
+                    self.send_message(message.chat.id, f'⛔База данных  не была найдена⛔')
+                except IndexError:
+                    self.send_message(message.chat.id, f'⛔Нет аргумента⛔')
+            else:
+                self.send_message(message.chat.id, "⛔В доступе отказано!⛔")
 
         @self.callback_query_handler(func=lambda call: True)
         def callback_inline(call):
@@ -88,7 +124,12 @@ class Bot(telebot.TeleBot):
         @self.message_handler(content_types=['text'])
         def handle_message(message):
 
-            if message.text == '📃Расписание📃':
+            db = dbcontrol.DBcontrol("data_bases/banlist.db")
+            user = db.get_user_ban_status(message.from_user.id)[0]
+            if user[2]:
+                self.send_message(message.chat.id, '⛔Ваша забись была заблокированна⛔')
+
+            elif message.text == '📃Расписание📃':
                 self.send_message(message.chat.id, 'Пожалуйста, выберите параллель, в которой Вы обучаетесь. 👇',
                                   reply_markup=RangeNumberInLineButton(range(9, 12)))
 
@@ -148,10 +189,9 @@ class Bot(telebot.TeleBot):
 
             else:
                 self.send_message(message.chat.id, 'Жаль, что я плохо понимаю людей😥')
-
+            db.close()
         self.polling()
 
 
 if __name__ == '__main__':
-    Bot(os.environ.get('TOKEN')).run()
-    # os.environ.get('TOKEN')
+    Bot('1463699404:AAHWgB4cnBMjLevaiVAfVd-M4Rt1EXC7vF8').run()
