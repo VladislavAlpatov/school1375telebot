@@ -8,7 +8,6 @@ from PIL import Image
 import os
 from pyowm.utils.config import get_default_config
 from modules import dbcontrol
-from hashlib import sha256
 
 
 class RangeNumberInLineButton(types.InlineKeyboardMarkup):
@@ -44,10 +43,10 @@ class Bot(telebot.TeleBot):
         self.__SchoolDir = RangeNumberReplyButton(['📃Расписание📃', '📰Новости📰', '🔄Главное меню🔄'])
 
         # погодник
-        #presets = get_default_config()
-        #presets['language'] = 'ru'
-        #self.__owm = pyowm.OWM(os.environ.get('OWN_TOKEN'), presets)
-       # del presets
+        presets = get_default_config()
+        presets['language'] = 'ru'
+        self.__owm = pyowm.OWM(os.environ.get('OWN_TOKEN'), presets)
+        del presets
 
         # список админов
         self.__admins = (852250251, 500132649)
@@ -194,4 +193,4 @@ class Bot(telebot.TeleBot):
 
 
 if __name__ == '__main__':
-    Bot('1463699404:AAHWgB4cnBMjLevaiVAfVd-M4Rt1EXC7vF8').run()
+    Bot(os.environ.get('TOKEN')).run()
