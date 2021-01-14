@@ -57,15 +57,15 @@ class Bot(telebot.TeleBot):
 
         @self.message_handler(commands=['start'])
         def start_message(message):
-            db = dbcontrol.DBcontrol("data_bases/banlist.db")
+            db = dbcontrol.DBcontrol()
 
             if not db.user_exists(message.from_user.id):
-                db.add_user(message.from_user.id, message.from_user.first_name)
+                db.add_user(message.from_user.id)
                 self.send_message(message.chat.id, subtext.help_message.replace("%name%", message.from_user.first_name),
                                   reply_markup=self.__MainDir)
 
             else:
-                self.send_message(message.chat.id, "Вы уже отправляли комманду /start")
+                self.send_message(message.chat.id, "Рад видеть вас снова! 🙂")
 
             db.close()
 
@@ -73,9 +73,10 @@ class Bot(telebot.TeleBot):
         def ban_command(message):
             if message.from_user.id in self.__admins:
                 try:
-                    db = dbcontrol.DBcontrol("data_bases/banlist.db")
+
                     line = str(message.text).split(' ')
-                    db.set_ban_status(int(line[1]), True if line[2] == "true" else False)
+                    user = dbcontrol.User(int(line[1])).ban(True if line[2] == "true" else False)
+
                 except Exception as e:
                     self.send_message(message.chat.id, f'⛔Не удалось произвести операциюю⛔ , код ошибки "{e}"')
             else:
@@ -83,13 +84,16 @@ class Bot(telebot.TeleBot):
 
         @self.message_handler(commands=['db'])
         def dump_db(message):
-            if message.from_user.id in self.__admins:
+            if dbcontrol.User(message.from_user.id).admin_status:
                 try:
+
                     line = str(message.text).split(' ')
                     with open(f"data_bases/{line[1]}", 'rb') as f:
                         self.send_document(message.chat.id, f)
+
                 except FileNotFoundError:
                     self.send_message(message.chat.id, f'⛔База данных  не была найдена⛔')
+
                 except IndexError:
                     self.send_message(message.chat.id, f'⛔Нет аргумента⛔')
             else:
@@ -122,9 +126,9 @@ class Bot(telebot.TeleBot):
         @self.message_handler(content_types=['text'])
         def handle_message(message):
 
-            db = dbcontrol.DBcontrol("data_bases/banlist.db")
-            user = db.get_user_ban_status(message.from_user.id)[0]
-            if user[2]:
+            db = dbcontrol.DBcontrol()
+
+            if dbcontrol.User(message.from_user.id).ban_status:
                 self.send_message(message.chat.id, '⛔Ваша забись была заблокированна⛔')
 
             elif message.text == '📃Расписание📃':
@@ -158,6 +162,7 @@ class Bot(telebot.TeleBot):
                                                        f"*Скорость ветра:* {w.wind()['speed']} м\\с\n"
                                                        f"*Влажность:* {w.humidity}%\n*Облачность:* {w.clouds}%",
                                       parse_mode='Markdown')
+
                 except Exception:
                     self.send_message(message.chat.id, '⛔Увы я не смог получить данные о погоде, попробуйте позже!⛔')
 
@@ -173,10 +178,10 @@ class Bot(telebot.TeleBot):
 
             elif message.text == '😺Котики😺':
                 try:
-                    image = requests.get('https://thiscatdoesnotexist.com/')
+                    url = requests.get('https://thiscatdoesnotexist.com/')
 
                     with open(f'{message.chat.id}.jpg', 'wb') as f:
-                        f.write(image.content)
+                        f.write(url.content)
 
                     with open(f'{message.chat.id}.jpg', 'rb') as f:
                         self.send_photo(message.chat.id, f)
@@ -187,7 +192,9 @@ class Bot(telebot.TeleBot):
 
             else:
                 self.send_message(message.chat.id, 'Жаль, что я плохо понимаю людей😥')
+
             db.close()
+
         self.polling()
 
 
