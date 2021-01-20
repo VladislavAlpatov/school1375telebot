@@ -43,6 +43,10 @@ class User:
         with self.__connection:
             return self.__cursor.execute("UPDATE `members` SET `ban` = ? WHERE `account_id` = ?", (statement, self.id))
 
+    def admin(self, statement: bool = True):
+        with self.__connection:
+            return self.__cursor.execute("UPDATE `members` SET `admin` = ? WHERE `account_id` = ?", (statement, self.id))
+
     def __del__(self):
         self.__connection.close()
 
