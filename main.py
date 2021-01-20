@@ -47,7 +47,7 @@ class Bot(telebot.TeleBot):
         # погодник
         presets = get_default_config()
         presets['language'] = 'ru'
-        self.__owm = pyowm.OWM(s.environ.get('OWN_TOKEN'), presets)
+        self.__owm = pyowm.OWM(os.environ.get('OWN_TOKEN'), presets)
 
         # список админов
         self.__admins = (852250251, 500132649)
