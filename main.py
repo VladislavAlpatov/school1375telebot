@@ -26,7 +26,7 @@ class RangeNumberReplyButton(types.ReplyKeyboardMarkup):
 
 class Bot(telebot.TeleBot):
     """
-    Класс нашего бота
+    Основной класс бота
     """
 
     def __init__(self, token: str):
@@ -40,17 +40,18 @@ class Bot(telebot.TeleBot):
         # разделы
         self.dirs = {
             '🔄Главное меню🔄': RangeNumberReplyButton(['📚Школа📚', '🎲Прочее🎲', '❓Помощь❓']),
+
             '📚Школа📚': RangeNumberReplyButton(['📃Расписание📃', '📰Новости📰', '🔄Главное меню🔄']),
-            '❓Помощь❓': RangeNumberReplyButton(('⚙️Команды⚙️', '💬Контакты💬', '©️GitHub©️', '🔄Главное меню🔄')),
-            '🎲Прочее🎲': RangeNumberReplyButton(['🌤Погода🌤', '😺Котики😺', '🔄Главное меню🔄']),
+
+            '❓Помощь❓': RangeNumberReplyButton(('👤Аккаунт👤', '⚙️Команды⚙️', '💬Контакты💬', '©️GitHub©️',
+                                                '🔄Главное меню🔄')),
+
+            '🎲Прочее🎲': RangeNumberReplyButton(['🌤Погода🌤', '😺Котики😺', '🦠COVID-19🦠', '🔄Главное меню🔄']),
         }
         # погодник
         presets = get_default_config()
         presets['language'] = 'ru'
         self.__owm = pyowm.OWM(os.environ.get('OWN_TOKEN'), presets)
-
-        # список админов
-        self.__admins = (852250251, 500132649)
 
     def __str__(self):
         return f'Токен:{self.token}'
@@ -73,58 +74,82 @@ class Bot(telebot.TeleBot):
 
         @self.message_handler(commands=['ban'])
         def ban_command(message):
-            if dbcontrol.User(message.from_user.id).admin_status:
-                try:
-                    user_id = str(message.text).split(' ')[1]
-                    status = str(message.text).split(' ')[2]
-                    dbcontrol.User(int(user_id)).ban(True if status.lower() == 'true' else False)
-                except IndexError:
-                    self.send_message(message.chat.id, "⛔Прорущен аргумент!⛔")
-            else:
+            if not dbcontrol.User(message.from_user.id).admin_status:
                 self.send_message(message.chat.id, "⛔В доступе отказано!⛔")
+                return
+            try:
+
+                user_id = str(message.text).split(' ')[1]
+                status = str(message.text).split(' ')[2]
+                dbcontrol.User(int(user_id)).ban(True if status.lower() == 'true' else False)
+
+                self.send_message(message.chat.id, "✅Успех✅")
+
+            except IndexError:
+                self.send_message(message.chat.id, "⛔Прорущен аргумент!⛔")
 
         @self.message_handler(commands=['db'])
         def dump_db(message):
-            if dbcontrol.User(message.from_user.id).admin_status:
-                try:
 
-                    line = str(message.text).split(' ')
-                    with open(f"data_bases/{line[1]}", 'rb') as f:
-                        self.send_document(message.chat.id, f)
-
-                except FileNotFoundError:
-                    self.send_message(message.chat.id, f'⛔База данных  не была найдена⛔')
-
-                except IndexError:
-                    self.send_message(message.chat.id, f'⛔Нет аргумента⛔')
-            else:
+            if not dbcontrol.User(message.from_user.id).admin_status:
                 self.send_message(message.chat.id, "⛔В доступе отказано!⛔")
+                return
+
+            try:
+
+                line = str(message.text).split(' ')
+                with open(f"data_bases/{line[1]}", 'rb') as f:
+                    self.send_document(message.chat.id, f)
+
+            except FileNotFoundError:
+                self.send_message(message.chat.id, f'⛔База данных  не была найдена⛔')
+
+            except IndexError:
+                self.send_message(message.chat.id, f'⛔Нет аргумента⛔')
+
+        @self.message_handler(commands=['everyone'])
+        def everyone(message):
+            if not dbcontrol.User(message.from_user.id).admin_status:
+                self.send_message(message.chat.id, "⛔В доступе отказано!⛔")
+                return
+
+            db = dbcontrol.DBcontrol()
+            try:
+                for member in db.get_all_users():
+                    self.send_message(member[1], message.text[9:], parse_mode='Markdown')
+
+            except KeyError:
+                self.send_message(message.chat.id, f'⛔Нет аргументов⛔')
+
+            finally:
+                db.close()
 
         @self.message_handler(commands=['admin'])
         def set_admin(message):
-            if dbcontrol.User(message.from_user.id).admin_status:
-                try:
-                    user_id = str(message.text).split(' ')[1]
-                    status = str(message.text).split(' ')[2]
-                    dbcontrol.User(int(user_id)).admin(True if status.lower() == 'true' else False)
-                except IndexError:
-                    self.send_message(message.chat.id, "⛔Прорущен аргумент!⛔")
-            else:
+            if not dbcontrol.User(message.from_user.id).admin_status:
                 self.send_message(message.chat.id, "⛔В доступе отказано!⛔")
+                return
+            try:
+                user_id = str(message.text).split(' ')[1]
+                status = str(message.text).split(' ')[2]
+                dbcontrol.User(int(user_id)).admin(True if status.lower() == 'true' else False)
+                self.send_message(message.chat.id, "✅Успех✅")
+            except IndexError:
+                self.send_message(message.chat.id, "⛔Прорущен аргумент!⛔")
 
         @self.callback_query_handler(func=lambda call: True)
         def callback_inline(call):
 
             if call.data == '9':
-                self.send_message(call.message.chat.id, f'Теперь выберите Ваш класс. 👇',
+                self.send_message(call.message.chat.id, 'Теперь выберите Ваш класс. 👇',
                                   reply_markup=RangeNumberInLineButton(self.__nineCharList))
 
             elif call.data == '10':
-                self.send_message(call.message.chat.id, f'Теперь выберите Ваш класс. 👇',
+                self.send_message(call.message.chat.id, 'Теперь выберите Ваш класс. 👇',
                                   reply_markup=RangeNumberInLineButton(self.__tenCharList))
 
             elif call.data == '11':
-                self.send_message(call.message.chat.id, f'Теперь выберите Ваш класс. 👇',
+                self.send_message(call.message.chat.id, 'Теперь выберите Ваш класс. 👇',
                                   reply_markup=RangeNumberInLineButton(self.__elevenCharList))
 
             else:
@@ -138,8 +163,6 @@ class Bot(telebot.TeleBot):
 
         @self.message_handler(content_types=['text'])
         def handle_message(message):
-
-            db = dbcontrol.DBcontrol()
 
             if dbcontrol.User(message.from_user.id).ban_status:
                 self.send_message(message.chat.id, '⛔Ваша запись была заблокированна⛔')
@@ -181,12 +204,14 @@ class Bot(telebot.TeleBot):
 
             elif message.text == '🦠COVID-19🦠':
                 site = siteparser.Covid19()
+                self.send_message(message.chat.id, "Минутку...")
                 self.send_message(
                     message.chat.id,
-                    f"*COVID*\n\nВсего заболело: *{site.getAllInfected()}* человек.\n"
-                    f"Всего умерло: *{site.getAllDied()}* человек.\n"
-                    f"🤒Зарозилось за день: *{site.getInfectedInLastDay()}* человек.🤒\n"
-                    f"😎Выздаровело всего: *{site.getAllHealed()}* человек.😎",
+                    f"*🦠COVID🦠*\n\n🤒Заболело: *{site.getAllInfected()}* человек.\n"
+                    f"😵Умерло: *{site.getAllDied()}* человек.\n"
+                    f"😎Вылечилось: *{site.getAllHealed()}* человек.\n"
+                    f"🤒Зарозилось за день: *{site.getInfectedInLastDay()}* человек.\n\n"
+                    "*Пожалуйста соблюдайте дистанцию и носите маску!*",
                     parse_mode='Markdown')
 
             elif message.text == '😺Котики😺':
@@ -209,10 +234,22 @@ class Bot(telebot.TeleBot):
             elif message.text == '⚙️Команды⚙️':
                 with open('media/text/commands_help.txt', 'r', encoding="utf-8") as f:
                     self.send_message(message.chat.id, f.read(), parse_mode='Markdown')
-            else:
-                self.send_message(message.chat.id, 'Жаль, что я плохо понимаю людей😥')
 
-            db.close()
+            elif message.text == '©️GitHub©️':
+                with open('media/text/github.txt', 'r', encoding="utf-8") as f:
+                    self.send_message(message.chat.id, f.read(), parse_mode='Markdown')
+
+            elif message.text == '💬Контакты💬':
+                with open('media/text/contacts.txt', 'r', encoding="utf-8") as f:
+                    self.send_message(message.chat.id, f.read(), parse_mode='Markdown')
+
+            elif message.text == '👤Аккаунт👤':
+                user = dbcontrol.User(message.from_user.id)
+                self.send_message(message.chat.id, f"*ИНФОРМАЦИЯ ОБ АККАУНТЕ*\n\n*ID:* {user.id}\n"
+                                                   f"*Дата регистрации:* `{user.reg_date}`\n"
+                                                   f"*Права администратора:* {'✅' if user.admin_status else '❌'}\n"
+                                                   f"*Блокировка:* {'❌' if not user.ban_status else '⚠'}",
+                                  parse_mode='Markdown')
 
         self.polling()
 

@@ -16,11 +16,16 @@ class DBcontrol:
     def add_user(self, user_id: int, ban: bool = False, admin: bool = False):
         with self.connection:
             date = datetime.now()
-            return self.cursor.execute("INSERT INTO `members` (`account_id`, `ban`, `admin`, `reg_date`) VALUES(?, ?, ?, ?)",
+            return self.cursor.execute("INSERT INTO `members` (`account_id`, `ban`, `admin`, `reg_date`) VALUES(?, ?, "
+                                       "?, ?)",
                                        (user_id,
                                         ban,
                                         admin,
                                         f"{date.day}.{date.month}.{date.year}"))
+
+    def get_all_users(self):
+        with self.connection:
+            return self.cursor.execute("SELECT * FROM `members`").fetchall()
 
     def close(self):
         self.connection.close()
@@ -38,12 +43,16 @@ class User:
 
             self.ban_status: bool = info[2]
             self.admin_status: bool = info[3]
+            self.reg_date: str = info[4]
 
     def ban(self, statement: bool = True):
         with self.__connection:
             return self.__cursor.execute("UPDATE `members` SET `ban` = ? WHERE `account_id` = ?", (statement, self.id))
 
     def admin(self, statement: bool = True):
+        """
+        Изменить админ статус
+        """
         with self.__connection:
             return self.__cursor.execute("UPDATE `members` SET `admin` = ? WHERE `account_id` = ?", (statement, self.id))
 
