@@ -8,6 +8,7 @@ from PIL import Image
 import os
 from pyowm.utils.config import get_default_config
 from modules import dbcontrol
+from time import sleep
 
 
 class RangeNumberInLineButton(types.InlineKeyboardMarkup):
@@ -29,7 +30,7 @@ class Bot(telebot.TeleBot):
     Основной класс бота
     """
 
-    def __init__(self, token: str):
+    def __init__(self, token: str, owm_token: str):
         super().__init__(token)
 
         self.__nineCharList = ('9-А', '9-Б', '9-И', '9-М', '9-Э')
@@ -51,7 +52,7 @@ class Bot(telebot.TeleBot):
         # погодник
         presets = get_default_config()
         presets['language'] = 'ru'
-        self.__owm = pyowm.OWM(os.environ.get('OWN_TOKEN'), presets)
+        self.__owm = pyowm.OWM(owm_token, presets)
 
     def __str__(self):
         return f'Токен:{self.token}'
@@ -63,10 +64,11 @@ class Bot(telebot.TeleBot):
             db = dbcontrol.DBcontrol()
 
             if not db.user_exists(message.from_user.id):
+
                 db.add_user(message.from_user.id)
                 self.send_message(message.chat.id, subtext.help_message.replace("%name%", message.from_user.first_name),
                                   reply_markup=self.dirs['🔄Главное меню🔄'])
-
+                sleep(0.100)
             else:
                 self.send_message(message.chat.id, "Рад видеть вас снова! 🙂")
 
@@ -113,10 +115,18 @@ class Bot(telebot.TeleBot):
                 self.send_message(message.chat.id, "⛔В доступе отказано!⛔")
                 return
 
+            counter = 0
             db = dbcontrol.DBcontrol()
+
             try:
                 for member in db.get_all_users():
-                    self.send_message(member[1], message.text[9:], parse_mode='Markdown')
+                    try:
+                        self.send_message(member[1], message.text[9:], parse_mode='Markdown')
+                        counter += 1
+
+                    except Exception:
+                        pass
+                self.send_message(message.chat.id, f"Выполнено {counter}/{len(db.get_all_users())}")
 
             except KeyError:
                 self.send_message(message.chat.id, f'⛔Нет аргументов⛔')
@@ -255,4 +265,4 @@ class Bot(telebot.TeleBot):
 
 
 if __name__ == '__main__':
-    Bot(os.environ.get('TOKEN')).run()
+    Bot(os.environ.get('TOKEN'), os.environ.get('OWN_TOKEN')).run()
