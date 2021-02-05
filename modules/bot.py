@@ -54,6 +54,27 @@ class Bot(telebot.TeleBot):
     def __str__(self):
         return f'Токен:{self.token}'
 
+    @staticmethod
+    def __admin_only(func):
+        """
+        Комманда будет выполенна только в том случае если у пользователя есть права администратора и он не в бане
+        """
+        def dec(message: types.Message):
+            user = dbcontrol.User(message.from_user.id)
+
+            if user.info['admin_status'] and not user.info['ban_status']:
+                func(message)
+
+        return dec
+
+    @staticmethod
+    def  __unbanned_only(func):
+        def dec(message: types.Message):
+            if not dbcontrol.User(message.from_user.id).info['ban_status']:
+                func(message)
+
+        return dec
+
     def run(self):
 
         @self.message_handler(commands=['start'])
@@ -72,10 +93,8 @@ class Bot(telebot.TeleBot):
             db.close()
 
         @self.message_handler(commands=['ban'])
+        @self.__admin_only
         def ban_command(message: types.Message):
-            if not dbcontrol.User(message.from_user.id).info['admin_status']:
-                self.send_message(message.chat.id, "⛔В доступе отказано!⛔")
-                return
             try:
 
                 user_id = str(message.text).split(' ')[1]
@@ -88,12 +107,8 @@ class Bot(telebot.TeleBot):
                 self.send_message(message.chat.id, "⛔Прорущен аргумент!⛔")
 
         @self.message_handler(commands=['db'])
+        @self.__admin_only
         def dump_db(message: types.Message):
-
-            if not dbcontrol.User(message.from_user.id).info['admin_status']:
-                self.send_message(message.chat.id, "⛔В доступе отказано!⛔")
-                return
-
             try:
 
                 line = str(message.text).split(' ')
@@ -107,6 +122,7 @@ class Bot(telebot.TeleBot):
                 self.send_message(message.chat.id, f'⛔Нет аргумента⛔')
 
         @self.message_handler(commands=['post'])
+        @self.__admin_only
         def everyone(message: types.Message):
             if not dbcontrol.User(message.from_user.id).info['admin_status']:
                 self.send_message(message.chat.id, "⛔В доступе отказано!⛔")
@@ -132,15 +148,13 @@ class Bot(telebot.TeleBot):
                 db.close()
 
         @self.message_handler(commands=['admin'])
+        @self.__admin_only
         def set_admin(message: types.Message):
             if not dbcontrol.User(message.from_user.id).info['admin_status']:
                 self.send_message(message.chat.id, "⛔В доступе отказано!⛔")
                 return
             try:
-                user_id = str(message.text).split(' ')[1]
-                status = str(message.text).split(' ')[2]
-
-                dbcontrol.User(int(user_id)).admin(True if status.lower() == 'true' else False)
+                dbcontrol.User(int(message.text.split(' ')[1])).admin(True if message.text.split(' ')[2].lower() == 'true' else False)
                 self.send_message(message.chat.id, "✅Успех✅")
 
             except IndexError:
@@ -162,12 +176,10 @@ class Bot(telebot.TeleBot):
                 pass
 
         @self.message_handler(content_types=['text'])
+        @self.__unbanned_only
         def handle_message(message: types.Message):
 
-            if dbcontrol.User(message.from_user.id).info['ban_status']:
-                self.send_message(message.chat.id, '⛔Ваша запись была заблокированна⛔')
-
-            elif message.text == '📃Расписание📃':
+            if message.text == '📃Расписание📃':
                 user = dbcontrol.User(message.from_user.id)
                 try:
                     with open(f'media/images/классы/{user.info["class_number"]}/расписание/{user.info["class_char"]}.jpg', 'rb') as f:
@@ -266,11 +278,11 @@ class Bot(telebot.TeleBot):
                                   parse_mode='Markdown')
 
             elif message.text == '🔢Номер класса🔢':
-                self.send_message(message.chat.id, 'Пожалуйста, выберите параллель.',
+                self.send_message(message.chat.id, 'Выберите класс',
                                   reply_markup=RangeNumberInLineButton(range(9, 12)))
 
             elif message.text == '🔡Буква класса🔡':
-                self.send_message(message.chat.id, 'Пожалуйста, выберите параллель.',
+                self.send_message(message.chat.id, 'Выберите  букву классаm',
                                   reply_markup=RangeNumberInLineButton('АБВГДЛМИСЭ'))
 
 
