@@ -8,7 +8,6 @@ import os
 from pyowm.utils.config import get_default_config
 from time import sleep
 
-
 class RangeNumberInLineButton(types.InlineKeyboardMarkup):
     def __init__(self, numbers):
         super().__init__()
@@ -70,7 +69,9 @@ class Bot(telebot.TeleBot):
     @staticmethod
     def  __unbanned_only(func):
         def dec(message: types.Message):
-            if not dbcontrol.User(message.from_user.id).info['ban_status']:
+            user = dbcontrol.User(message.from_user.id)
+            if not user.info['ban_status']:
+                user.set_sent_messages(user.info['sent_messages'] + 1)
                 func(message)
 
         return dec
@@ -86,9 +87,9 @@ class Bot(telebot.TeleBot):
                 db.add_user(message.from_user.id)
                 self.send_message(message.chat.id, subtext.help_message.replace("%name%", message.from_user.first_name),
                                   reply_markup=self.__dirs['🔄Главное меню🔄'])
-                sleep(0.100)
             else:
-                self.send_message(message.chat.id, "Рад видеть вас снова! 🙂")
+                self.send_message(message.chat.id, "Рад видеть вас снова! 🙂",
+                                  reply_markup=self.__dirs['🔄Главное меню🔄'])
 
             db.close()
 
@@ -123,10 +124,7 @@ class Bot(telebot.TeleBot):
 
         @self.message_handler(commands=['post'])
         @self.__admin_only
-        def everyone(message: types.Message):
-            if not dbcontrol.User(message.from_user.id).info['admin_status']:
-                self.send_message(message.chat.id, "⛔В доступе отказано!⛔")
-                return
+        def post(message: types.Message):
 
             counter = 0
             db = dbcontrol.DBcontrol()
@@ -136,7 +134,7 @@ class Bot(telebot.TeleBot):
                     try:
                         self.send_message(member[1], message.text[9:], parse_mode='Markdown')
                         counter += 1
-
+                        sleep(0.1)
                     except Exception:
                         pass
                 self.send_message(message.chat.id, f"Выполнено {counter}/{len(db.get_all_users())}")
@@ -150,9 +148,6 @@ class Bot(telebot.TeleBot):
         @self.message_handler(commands=['admin'])
         @self.__admin_only
         def set_admin(message: types.Message):
-            if not dbcontrol.User(message.from_user.id).info['admin_status']:
-                self.send_message(message.chat.id, "⛔В доступе отказано!⛔")
-                return
             try:
                 dbcontrol.User(int(message.text.split(' ')[1])).admin(True if message.text.split(' ')[2].lower() == 'true' else False)
                 self.send_message(message.chat.id, "✅Успех✅")
@@ -204,7 +199,7 @@ class Bot(telebot.TeleBot):
                                   parse_mode='Markdown')
 
             elif message.text == '🎲Прочее🎲':
-                self.send_message(message.chat.id, 'В находитесь в разделе «🎲Прочее 🎲».',
+                self.send_message(message.chat.id, 'В находитесь в разделе «🎲Прочее🎲».',
                                   reply_markup=self.__dirs[message.text])
 
             elif message.text == '🌤Погода🌤':
@@ -230,16 +225,15 @@ class Bot(telebot.TeleBot):
                     f"*🦠COVID🦠*\n\n🤒Заболело: *{information['all_infected']}* человек.\n"
                     f"😵Умерло: *{information['all_died']}* человек.\n"
                     f"😎Вылечилось: *{information['all_healed']}* человек.\n"
-                    f"🤒Зарозилось за день: *{information['last_infected']}* человек.\n\n"
+                    f"🤒Заразилось за день: *{information['last_infected']}* человек.\n\n"
                     "*Пожалуйста соблюдайте дистанцию и носите маску!*",
                     parse_mode='Markdown')
 
             elif message.text == '😺Котики😺':
                 try:
-                    url = requests.get('https://thiscatdoesnotexist.com/')
 
                     with open(f'{message.chat.id}.jpg', 'wb') as f:
-                        f.write(url.content)
+                        f.write(requests.get('https://thiscatdoesnotexist.com/').content)
 
                     with open(f'{message.chat.id}.jpg', 'rb') as f:
                         self.send_photo(message.chat.id, f)
@@ -274,7 +268,8 @@ class Bot(telebot.TeleBot):
                                                    f"*Дата регистрации:* `{user.info['reg_date']}`\n"
                                                    f"*Права администратора:* {'✅' if user.info['admin_status'] else '❌'}\n"
                                                    f"*Блокировка:* {'❌' if not user.info['ban_status'] else '⚠'}\n"
-                                                   f"*Класс:* {user.info['class_number']}-{user.info['class_char']}",
+                                                   f"*Класс:* {user.info['class_number']}-{user.info['class_char']}\n"
+                                                   f"*Отправленно сообщений:* {user.info['sent_messages']}",
                                   parse_mode='Markdown')
 
             elif message.text == '🔢Номер класса🔢':
