@@ -1,6 +1,6 @@
 import telebot
 from telebot import types
-from modules import subtext, siteparser, dbcontrol
+from modules import siteparser, dbcontrol
 import pyowm
 import requests
 from PIL import Image
@@ -68,6 +68,9 @@ class Bot(telebot.TeleBot):
 
     @staticmethod
     def  __unbanned_only(func):
+        """
+        Комманда будет выполенна только в том случае если у пользователя нет блокировки!
+        """
         def dec(message: types.Message):
             user = dbcontrol.User(message.from_user.id)
             if not user.info['ban_status']:
@@ -85,7 +88,9 @@ class Bot(telebot.TeleBot):
             if not db.user_exists(message.from_user.id):
 
                 db.add_user(message.from_user.id)
-                self.send_message(message.chat.id, subtext.help_message.replace("%name%", message.from_user.first_name),
+
+                with open("media/text/hello_message.txt") as f:
+                    self.send_message(message.chat.id, f.read().replace("%name%", message.from_user.first_name),
                                   reply_markup=self.__dirs['🔄Главное меню🔄'])
             else:
                 self.send_message(message.chat.id, "Рад видеть вас снова! 🙂",
@@ -177,7 +182,7 @@ class Bot(telebot.TeleBot):
             if message.text == '📃Расписание📃':
                 user = dbcontrol.User(message.from_user.id)
                 try:
-                    with open(f'media/images/классы/{user.info["class_number"]}/расписание/{user.info["class_char"]}.jpg', 'rb') as f:
+                    with open(f'media/files/классы/{user.info["class_number"]}/расписание/{user.info["class_char"]}.jpg', 'rb') as f:
                         self.send_photo(message.chat.id,f )
 
                 except FileNotFoundError:
@@ -195,7 +200,7 @@ class Bot(telebot.TeleBot):
 
             elif message.text == '📰Новости📰':
                 site = siteparser.News()
-                self.send_message(message.chat.id, f'*{site.getLastNewsTitle()}*\n\n{site.getLastNewsText()}',
+                self.send_message(message.chat.id, f'*{site.get_last_news_title()}*\n\n{site.get_last_news_text()}',
                                   parse_mode='Markdown')
 
             elif message.text == '🎲Прочее🎲':
