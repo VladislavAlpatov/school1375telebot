@@ -158,7 +158,7 @@ class Bot(telebot.TeleBot):
                 self.send_message(message.chat.id, "✅Успех✅")
 
             except IndexError:
-                self.send_message(message.chat.id, "⛔Прорущен аргумент!⛔")
+                self.send_message(message.chat.id, "⛔Пропущен аргумент!⛔")
 
         @self.callback_query_handler(func=lambda call: True)
         def callback_inline(call: types.CallbackQuery):
@@ -282,7 +282,7 @@ class Bot(telebot.TeleBot):
                                   reply_markup=RangeNumberInLineButton(range(9, 12)))
 
             elif message.text == '🔡Буква класса🔡':
-                self.send_message(message.chat.id, 'Выберите  букву классаm',
+                self.send_message(message.chat.id, 'Выберите  букву класса',
                                   reply_markup=RangeNumberInLineButton('АБВГДЛМИСЭ'))
 
 
