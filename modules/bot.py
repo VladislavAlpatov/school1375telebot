@@ -37,14 +37,14 @@ class Bot(telebot.TeleBot):
             '👤Аккаунт👤': RangeNumberReplyButton(['📂Информация📂', '🔢Номер класса🔢', '🔡Буква класса🔡',
                                                   '🔄Главное меню🔄']),
 
-            '📚Школа📚': RangeNumberReplyButton(['📃Расписание📃', '📰Новости📰', '🔄Главное меню🔄']),
+            '📚Школа📚': RangeNumberReplyButton(['📃Расписание📃', '📰Новости📰', '📘Доп материалы📘', '🔄Главное меню🔄']),
 
             '❓Помощь❓': RangeNumberReplyButton(('⚙️Команды⚙️', '💬Контакты💬', '©️GitHub©️',
                                                 '🔄Главное меню🔄')),
 
             '🎲Прочее🎲': RangeNumberReplyButton(['🌤Погода🌤', '😺Котики😺', '🦠COVID-19🦠', '🔄Главное меню🔄']),
         }
-
+        self.__subjects = ('Физика', 'Алгебра', 'Русский язык', 'Информатика')
         # погодник
         presets = get_default_config()
         presets['language'] = 'ru'
@@ -117,7 +117,7 @@ class Bot(telebot.TeleBot):
         def dump_db(message: types.Message):
             try:
 
-                line = str(message.text).split(' ')
+                line = message.text.split(' ')
                 with open(f"data_bases/{line[1]}", 'rb') as f:
                     self.send_document(message.chat.id, f)
 
@@ -135,6 +135,7 @@ class Bot(telebot.TeleBot):
             db = dbcontrol.DBcontrol()
 
             try:
+                self.send_message(message.chat.id, '⏺Полезная загрузка начата...⏺')
                 for member in db.get_all_users():
                     try:
                         self.send_message(member[1], message.text[9:], parse_mode='Markdown')
@@ -172,6 +173,17 @@ class Bot(telebot.TeleBot):
                 user.set_class_char(call.data)
                 self.send_message(call.message.chat.id, '✅Изменено✅')
 
+            elif call.data in self.__subjects:
+                try:
+                    self.send_message(call.message.chat.id, '📶Загружаю📶')
+                    with open(f'media/files/классы/{user.info["class_number"]}/доп материалы/{call.data.lower()}/{call.data.lower()}.zip', 'rb') as f:
+                        self.send_document(call.message.chat.id, f)
+
+                except FileNotFoundError:
+                    self.send_message(call.message.chat.id, "😓Файл не найден😓")
+
+                except ConnectionError:
+                    self.send_message(call.message.chat.id, '⚠️Не удалось загрузить дополнительный материалы⚠️')
             else:
                 pass
 
@@ -280,6 +292,10 @@ class Bot(telebot.TeleBot):
             elif message.text == '🔢Номер класса🔢':
                 self.send_message(message.chat.id, 'Выберите класс',
                                   reply_markup=RangeNumberInLineButton(range(9, 12)))
+
+            elif message.text == '📘Доп материалы📘':
+                self.send_message(message.chat.id, "👇Выберите предмет👇",
+                                  reply_markup=RangeNumberInLineButton(self.__subjects))
 
             elif message.text == '🔡Буква класса🔡':
                 self.send_message(message.chat.id, 'Выберите  букву класса',
