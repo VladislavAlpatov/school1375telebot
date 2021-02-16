@@ -1,14 +1,13 @@
 import sqlite3
 from datetime import datetime
 
-
 class DBcontrol:
 
     def __init__(self):
         self.__connection = sqlite3.connect('data_bases/data.db')
         self.__cursor = self.__connection.cursor()
 
-    def user_exists(self, user_id):
+    def user_exists(self, user_id: int):
         with self.__connection:
             result = self.__cursor.execute('SELECT * FROM `members` WHERE `account_id` = ?', (user_id,)).fetchall()
             return bool(len(result))
