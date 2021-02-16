@@ -42,7 +42,7 @@ class Bot(telebot.TeleBot):
             '❓Помощь❓': RangeNumberReplyButton(('⚙️Команды⚙️', '💬Контакты💬', '©️GitHub©️',
                                                 '🔄Главное меню🔄')),
 
-            '🎲Прочее🎲': RangeNumberReplyButton(['🌤Погода🌤', '😺Котики😺', '🦠COVID-19🦠', '🔄Главное меню🔄']),
+            '🎲Прочее🎲': RangeNumberReplyButton(['🌤Погода🌤', '😺Котики😺', '☝️Цитаты☝️', '🦠COVID-19🦠', '🔄Главное меню🔄']),
         }
         self.__subjects = ('Физика', 'Алгебра', 'Русский язык', 'Информатика')
         # погодник
@@ -58,7 +58,7 @@ class Bot(telebot.TeleBot):
         """
         Комманда будет выполенна только в том случае если у пользователя есть права администратора и он не в бане
         """
-        def dec(message: types.Message):
+        def dec(message):
             user = dbcontrol.User(message.from_user.id)
 
             if user.info['admin_status'] and not user.info['ban_status']:
@@ -162,6 +162,7 @@ class Bot(telebot.TeleBot):
                 self.send_message(message.chat.id, "⛔Пропущен аргумент!⛔")
 
         @self.callback_query_handler(func=lambda call: True)
+
         def callback_inline(call: types.CallbackQuery):
             user = dbcontrol.User(call.from_user.id)
 
@@ -274,6 +275,11 @@ class Bot(telebot.TeleBot):
             elif message.text == '💬Контакты💬':
                 with open('media/text/contacts.txt', 'r', encoding="utf-8") as f:
                     self.send_message(message.chat.id, f.read(), parse_mode='Markdown')
+
+            elif message.text == '☝️Цитаты☝️':
+                site = siteparser.Quotes()
+                self.send_message(message.chat.id, f'{site.get_quote_message()}\n\n*{site.get_author()}*',
+                                  parse_mode="Markdown")
 
             elif message.text == '👤Аккаунт👤':
                 self.send_message(message.chat.id, f'Вы перешли в раздел «{message.text}»',
