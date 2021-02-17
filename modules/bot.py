@@ -7,6 +7,8 @@ from PIL import Image
 import os
 from pyowm.utils.config import get_default_config
 from time import sleep
+import time
+
 
 class RangeNumberInLineButton(types.InlineKeyboardMarkup):
     def __init__(self, numbers):
@@ -53,31 +55,33 @@ class Bot(telebot.TeleBot):
     def __str__(self):
         return f'Токен:{self.token}'
 
-    @staticmethod
-    def __admin_only(func):
-        """
-        Комманда будет выполенна только в том случае если у пользователя есть права администратора и он не в бане
-        """
-        def dec(message):
-            user = dbcontrol.User(message.from_user.id)
-
-            if user.info['admin_status'] and not user.info['ban_status']:
-                func(message)
-
-        return dec
 
     @staticmethod
-    def  __unbanned_only(func):
-        """
-        Комманда будет выполенна только в том случае если у пользователя нет блокировки!
-        """
-        def dec(message: types.Message):
-            user = dbcontrol.User(message.from_user.id)
-            if not user.info['ban_status']:
-                user.set_sent_messages(user.info['sent_messages'] + 1)
-                func(message)
+    def  __permissions(admin_only:bool=False, logging:bool=False):
+        def actual_decorator(func):
+            def wrapper(message: types.Message):
+                user = dbcontrol.User(message.from_user.id)
+                start_time = time.time()
 
-        return dec
+                if admin_only:
+                    if user.info['admin_status']:
+                        func(message)
+
+                elif not user.info['ban_status']:
+                    func(message)
+
+                else:
+                    pass
+
+                if logging:
+                    print(f'[LOG] <id={message.from_user.id}> '
+                          f'<name={message.from_user.username}> '
+                          f'<admin={user.info["admin_status"]}> '
+                          f'<ban={user.info["ban_status"]}> '
+                          f'<text={message.text}> '
+                          f'<time={time.time() - start_time}>')
+            return wrapper
+        return actual_decorator
 
     def run(self):
 
@@ -99,7 +103,7 @@ class Bot(telebot.TeleBot):
             db.close()
 
         @self.message_handler(commands=['ban'])
-        @self.__admin_only
+        @self.__permissions(admin_only=True, logging=True)
         def ban_command(message: types.Message):
             try:
 
@@ -113,7 +117,7 @@ class Bot(telebot.TeleBot):
                 self.send_message(message.chat.id, "⛔Прорущен аргумент!⛔")
 
         @self.message_handler(commands=['db'])
-        @self.__admin_only
+        @self.__permissions(admin_only=True, logging=True)
         def dump_db(message: types.Message):
             try:
 
@@ -128,7 +132,7 @@ class Bot(telebot.TeleBot):
                 self.send_message(message.chat.id, f'⛔Нет аргумента⛔')
 
         @self.message_handler(commands=['post'])
-        @self.__admin_only
+        @self.__permissions(admin_only=True, logging=True)
         def post(message: types.Message):
 
             counter = 0
@@ -152,7 +156,7 @@ class Bot(telebot.TeleBot):
                 db.close()
 
         @self.message_handler(commands=['admin'])
-        @self.__admin_only
+        @self.__permissions(admin_only=True, logging=True)
         def set_admin(message: types.Message):
             try:
                 dbcontrol.User(int(message.text.split(' ')[1])).admin(True if message.text.split(' ')[2].lower() == 'true' else False)
@@ -189,7 +193,7 @@ class Bot(telebot.TeleBot):
                 pass
 
         @self.message_handler(content_types=['text'])
-        @self.__unbanned_only
+        @self.__permissions(logging=True)
         def handle_message(message: types.Message):
 
             if message.text == '📃Расписание📃':
