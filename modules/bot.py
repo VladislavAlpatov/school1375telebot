@@ -58,8 +58,8 @@ class Bot(telebot.TeleBot):
 
     @staticmethod
     def  __permissions(admin_only:bool=False, logging:bool=False):
-        def actual_decorator(func):
-            def wrapper(message: types.Message):
+        def dec(func):
+            def checker(message: types.Message):
                 user = dbcontrol.User(message.from_user.id)
                 start_time = time.time()
 
@@ -80,8 +80,8 @@ class Bot(telebot.TeleBot):
                           f'<ban={user.info["ban_status"]}> '
                           f'<text={message.text}> '
                           f'<time={time.time() - start_time}>')
-            return wrapper
-        return actual_decorator
+            return checker
+        return dec
 
     def run(self):
 
