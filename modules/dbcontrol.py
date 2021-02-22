@@ -1,6 +1,7 @@
 import sqlite3
 from datetime import datetime
 
+
 class DBcontrol:
 
     def __init__(self):
@@ -28,7 +29,6 @@ class DBcontrol:
 
 class User:
     def __init__(self, user_id: int):
-
         self.__connection = sqlite3.connect('data_bases/data.db')
         self.__cursor = self.__connection.cursor()
 
@@ -59,16 +59,21 @@ class User:
     def set_class_number(self, number: int):
         with self.__connection:
             return self.__cursor.execute("UPDATE `members` SET `class_number` = ? WHERE `account_id` = ?", (number,
-                                                                                                    self.info['id']))
+                                                                                                            self.info[
+                                                                                                                'id']))
 
     def set_class_char(self, char: str):
         with self.__connection:
-            return self.__cursor.execute("UPDATE `members` SET `class_char` = ? WHERE `account_id` = ?", (char[0].upper(),
-                                                                                                        self.info['id']))
+            return self.__cursor.execute("UPDATE `members` SET `class_char` = ? WHERE `account_id` = ?",
+                                         (char[0].upper(),
+
+                                          self.info['id']))
+
     def set_sent_messages(self, number: int):
         with self.__connection:
             return self.__cursor.execute("UPDATE `members` SET `sent_messages` = ? WHERE `account_id` = ?", (number,
-                                                                                                          self.info['id']))
+                                                                                                             self.info[
+                                                                                                                 'id']))
 
     def __del__(self):
         self.__connection.close()
