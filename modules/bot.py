@@ -2,10 +2,9 @@ from aiogram import *
 from modules import siteparser, dbcontrol
 import pyowm
 import requests
-from PIL import Image
 import os
 from pyowm.utils.config import get_default_config
-from time import sleep
+from asyncio import sleep
 
 
 class RangeNumberInLineButton(types.InlineKeyboardMarkup):
@@ -143,11 +142,14 @@ class SchoolBot(Bot):
                 await message.answer('⏺Полезная загрузка начата...⏺')
                 for member in db.get_all_users():
                     try:
-                        await self.send_message(member[1], message.text[9:], parse_mode='Markdown')
+
+                        await self.send_message(member[1], message.text[6:], parse_mode='Markdown')
                         counter += 1
-                        sleep(0.1)
-                    except Exception:
-                        pass
+                        await sleep(0.1)
+
+                    except Exception as e:
+                        print(f'[ERROR] {e}')
+
                 await message.answer(f"Выполнено {counter}/{len(db.get_all_users())}")
 
             except KeyError:
@@ -182,9 +184,8 @@ class SchoolBot(Bot):
             elif call.data in self.__subjects:
                 try:
                     await call.answer('📶Загружаю📶')
-                    with open(
-                            f'media/files/классы/{user.info["class_number"]}/доп материалы/{call.data.lower()}/{call.data.lower()}.zip',
-                            'rb') as f:
+                    with open(f'media/files/классы/{user.info["class_number"]}/доп материалы/{call.data.lower()}/'
+                              f'{call.data.lower()}.zip', 'rb') as f:
                         await self.send_document(call.from_user.id, f)
 
                 except FileNotFoundError:
