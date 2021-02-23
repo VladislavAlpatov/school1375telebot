@@ -104,5 +104,5 @@ class DBcontrol:
         except IndexError:
             return 0
 
-    def close(self):
+    def __del__(self):
         self.__connection.close()

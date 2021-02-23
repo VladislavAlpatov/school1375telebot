@@ -69,7 +69,7 @@ class SchoolBot(Bot):
                     counter += 1
 
                 member.set_user_sent_messages_per_minute(0)
-            print(f'Забанено {counter}')
+            print(f'[LOG] Забанено записей {counter}')
 
             await asyncio.sleep(60)
 
@@ -127,8 +127,6 @@ class SchoolBot(Bot):
             else:
                 await message.answer("Рад видеть вас снова! 🙂", reply_markup=self.__dirs['🔄Главное меню🔄'])
 
-            db.close()
-
         @self.__dp.message_handler(commands=['ban'])
         @self.__permissions(admin_only=True, logging=True)
         async def ban_command(message: types.Message):
@@ -168,9 +166,6 @@ class SchoolBot(Bot):
             except IndexError:
                 await message.answer("⛔Прорущен аргумент!⛔")
 
-            finally:
-                db.close()
-
         @self.__dp.message_handler(commands=['db'])
         @self.__permissions(admin_only=True, logging=True)
         async def dump_db(message: types.Message):
@@ -209,9 +204,6 @@ class SchoolBot(Bot):
 
             except KeyError:
                 await message.answer(f'⛔Нет аргументов⛔')
-
-            finally:
-                db.close()
 
         @self.__dp.message_handler(commands=['set_name'])
         @self.__permissions(logging=True)
