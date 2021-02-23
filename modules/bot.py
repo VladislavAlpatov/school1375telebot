@@ -77,7 +77,7 @@ class SchoolBot(Bot):
                 if logging:
                     print(f'[LOG] <id={message.from_user.id}> '
                           f'<Telegram=@{message.from_user.username}> '
-                          f'<user_name={user.info["user_name"]}>'
+                          f'<user_name={user.info["user_name"]}> '
                           f'<admin={user.info["admin_status"]}> '
                           f'<ban={user.info["ban_status"]}> '
                           f'<text={message.text}> ')
