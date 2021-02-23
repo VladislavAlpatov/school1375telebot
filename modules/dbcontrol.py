@@ -16,12 +16,20 @@ class DBcontrol:
     def add_user(self, user_id: int):
         with self.__connection:
             date = datetime.now()
-            return self.__cursor.execute("INSERT INTO `members` (`account_id`, `reg_date`) VALUES(?, ?)",
-                                         (user_id, f"{date.day}.{date.month}.{date.year}"))
+            return self.__cursor.execute("INSERT INTO `members` (`account_id`, `reg_date`, `user_name`) VALUES(?,?,?)",
+                                         (user_id, f"{date.day}.{date.month}.{date.year}", user_id))
 
     def get_all_users(self):
         with self.__connection:
             return self.__cursor.execute("SELECT * FROM `members`").fetchall()
+
+    def get_user_id_by_name(self, name: str) -> int:
+        try:
+            with self.__connection:
+                return self.__cursor.execute("SELECT `account_id` FROM `members` WHERE `user_name` = ?",
+                                             (name,)).fetchall()[0][0]
+        except IndexError:
+            return 0
 
     def close(self):
         self.__connection.close()
@@ -36,6 +44,7 @@ class User:
             data = self.__cursor.execute("SELECT * FROM `members` WHERE `account_id` = ?", (user_id,)).fetchall()[0]
 
             self.info = {'id': user_id,
+                         'user_name': data[1],
                          'ban_status': data[2],
                          'admin_status': data[3],
                          'reg_date': data[4],

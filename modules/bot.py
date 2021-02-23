@@ -4,7 +4,7 @@ import pyowm
 import requests
 import os
 from pyowm.utils.config import get_default_config
-from asyncio import sleep
+import asyncio
 
 
 class RangeNumberInLineButton(types.InlineKeyboardMarkup):
@@ -51,8 +51,8 @@ class SchoolBot(Bot):
         presets = get_default_config()
         presets['language'] = 'ru'
         self.__owm = pyowm.OWM(owm_token, presets)
-
         self.__dp = Dispatcher(self)
+        self.__eventloop = asyncio.get_event_loop()
 
     @staticmethod
     def __permissions(admin_only: bool = False, logging: bool = False):
@@ -76,7 +76,8 @@ class SchoolBot(Bot):
 
                 if logging:
                     print(f'[LOG] <id={message.from_user.id}> '
-                          f'<name={message.from_user.username}> '
+                          f'<Telegram=@{message.from_user.username}> '
+                          f'<user_name={user.info["user_name"]}>'
                           f'<admin={user.info["admin_status"]}> '
                           f'<ban={user.info["ban_status"]}> '
                           f'<text={message.text}> ')
@@ -89,7 +90,6 @@ class SchoolBot(Bot):
         @self.__dp.message_handler(commands=['start'])
         async def start_message(message: types.Message):
             db = dbcontrol.DBcontrol()
-
             if not db.user_exists(message.from_user.id):
 
                 db.add_user(message.from_user.id)
@@ -115,6 +115,34 @@ class SchoolBot(Bot):
 
             except IndexError:
                 await message.answer("⛔Прорущен аргумент!⛔")
+
+        @self.__dp.message_handler(commands=['find'])
+        @self.__permissions(logging=True)
+        async def find_command(message: types.Message):
+            db = dbcontrol.DBcontrol()
+            try:
+                user_id = db.get_user_id_by_name(message.text.split(' ')[1])
+
+                if not user_id:
+                    await message.answer("⛔Пользователь не найден!⛔")
+                    return
+
+                user = dbcontrol.User(user_id)
+                await message.answer(f"*ПРОСМОТР ПРОФИЛЯ*\n\n"
+                                     f"*ТEЛЕГРАМ:* @{message.from_user.username}\n"
+                                     f"*ID:* {user.info['id']}\n"
+                                     f"*АДМИН:* {'✅' if user.info['admin_status'] else '❌'}\n"
+                                     f"*КЛАСС:* {user.info['class_number']}-{user.info['class_char']}\n"
+                                     f"*БЛОКИРОВКА:* {'❌' if not user.info['ban_status'] else '⚠'}\n"
+                                     f"*ЗАРЕГИСТРИРОВАН*: `{user.info['reg_date']}`\n"
+                                     f"*ОТПРАВИЛ СООБЩЕНИЙ:* {user.info['sent_messages']}",
+                                     parse_mode='Markdown')
+
+            except IndexError:
+                await message.answer("⛔Прорущен аргумент!⛔")
+
+            finally:
+                db.close()
 
         @self.__dp.message_handler(commands=['db'])
         @self.__permissions(admin_only=True, logging=True)
@@ -145,7 +173,7 @@ class SchoolBot(Bot):
 
                         await self.send_message(member[1], message.text[6:], parse_mode='Markdown')
                         counter += 1
-                        await sleep(0.1)
+                        await asyncio.sleep(0.1)
 
                     except Exception as e:
                         print(f'[ERROR] {e}')
@@ -228,8 +256,7 @@ class SchoolBot(Bot):
 
             elif message.text == '🌤Погода🌤':
                 try:
-                    mgr = self.__owm.weather_manager()
-                    w = mgr.weather_at_place('Москва').weather
+                    w = self.__owm.weather_manager().weather_at_place('Москва').weather
                     await message.answer("*Погода на сегодня.*\n\n"
                                          f"*Статус:* {w.detailed_status}\n"
                                          f"*Температура:* {w.temperature('celsius')['temp']} ℃\n"
@@ -289,8 +316,10 @@ class SchoolBot(Bot):
 
             elif message.text == '📂Информация📂':
                 user = dbcontrol.User(message.from_user.id)
-                await message.answer(f"*ИНФОРМАЦИЯ ОБ АККАУНТЕ*\n\n*ID:* {user.info['id']}\n"
+                await message.answer(f"*ИНФОРМАЦИЯ ОБ АККАУНТЕ*\n\n"
+                                     f"*ID:* {user.info['id']}\n"
                                      f"*Дата регистрации:* `{user.info['reg_date']}`\n"
+                                     f"*Имя:* {user.info['user_name']}\n"
                                      f"*Права администратора:* {'✅' if user.info['admin_status'] else '❌'}\n"
                                      f"*Блокировка:* {'❌' if not user.info['ban_status'] else '⚠'}\n"
                                      f"*Класс:* {user.info['class_number']}-{user.info['class_char']}\n"
@@ -304,5 +333,7 @@ class SchoolBot(Bot):
 
             elif message.text == '🔡Буква класса🔡':
                 await message.answer('Выберите  букву класса', reply_markup=RangeNumberInLineButton('АБВГДЛМИСЭ'))
+
+        # self.__eventloop.create_task(self.pol())
 
         executor.start_polling(self.__dp, skip_updates=True)
