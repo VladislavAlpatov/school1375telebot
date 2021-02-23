@@ -54,16 +54,16 @@ class User:
 
     def ban(self, statement: bool = True):
         with self.__connection:
-            return self.__cursor.execute("UPDATE `members` SET `ban` = ? WHERE `account_id` = ?", (statement,
-                                                                                                   self.info['id']))
+            return self.__cursor.execute("UPDATE `members` SET `ban` = ? WHERE `account_id` = ?",
+                                         (statement, self.info['id']))
 
     def admin(self, statement: bool = True):
         """
         Изменить админ статус
         """
         with self.__connection:
-            return self.__cursor.execute("UPDATE `members` SET `admin` = ? WHERE `account_id` = ?", (statement,
-                                                                                                     self.info['id']))
+            return self.__cursor.execute("UPDATE `members` SET `admin` = ? WHERE `account_id` = ?",
+                                         (statement, self.info['id']))
 
     def set_class_number(self, number: int):
         with self.__connection:
@@ -83,6 +83,11 @@ class User:
             return self.__cursor.execute("UPDATE `members` SET `sent_messages` = ? WHERE `account_id` = ?", (number,
                                                                                                              self.info[
                                                                                                                  'id']))
+
+    def set_user_name(self, name: str):
+        with self.__connection:
+            return self.__cursor.execute('UPDATE `members` SET `user_name` = ? WHERE `account_id` = ?',
+                                         (name, self.info['id']))
 
     def __del__(self):
         self.__connection.close()

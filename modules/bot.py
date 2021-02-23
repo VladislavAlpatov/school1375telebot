@@ -157,7 +157,7 @@ class SchoolBot(Bot):
                 await message.answer('⛔База данных  не была найдена⛔')
 
             except IndexError:
-                await message.answer(f'⛔Нет аргумента⛔')
+                await message.answer('⛔Нет аргумента⛔')
 
         @self.__dp.message_handler(commands=['post'])
         @self.__permissions(admin_only=True, logging=True)
@@ -185,6 +185,17 @@ class SchoolBot(Bot):
 
             finally:
                 db.close()
+
+        @self.__dp.message_handler(commands=['set_name'])
+        @self.__permissions(logging=True)
+        async def set_name(message: types.Message):
+            try:
+
+                dbcontrol.User(message.from_user.id).set_user_name(message.text.split(' ')[1])
+                await message.answer("✅Успех✅")
+
+            except IndexError:
+                await message.answer("⛔Нет аргумента⛔")
 
         @self.__dp.message_handler(commands=['admin'])
         @self.__permissions(admin_only=True, logging=True)
@@ -220,7 +231,7 @@ class SchoolBot(Bot):
                     await call.answer("😓Файл не найден😓")
 
                 except ConnectionError:
-                    await call.answer('⚠️Не удалось загрузить дополнительный материалы⚠️')
+                    await call.answer('⚠Не удалось загрузить дополнительный материалы⚠')
             else:
                 pass
 
