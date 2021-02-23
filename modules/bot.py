@@ -1,10 +1,13 @@
-from aiogram import *
+import telebot
+from telebot import types
 from modules import siteparser, dbcontrol
 import pyowm
 import requests
+from PIL import Image
 import os
 from pyowm.utils.config import get_default_config
-from asyncio import sleep
+from time import sleep
+import time
 
 
 class RangeNumberInLineButton(types.InlineKeyboardMarkup):
@@ -21,7 +24,7 @@ class RangeNumberReplyButton(types.ReplyKeyboardMarkup):
             self.add(types.KeyboardButton(text=str(number)))
 
 
-class SchoolBot(Bot):
+class Bot(telebot.TeleBot):
     """
     Основной класс бота
     """
@@ -33,8 +36,7 @@ class SchoolBot(Bot):
         self.__dirs = {
             '🔄Главное меню🔄': RangeNumberReplyButton(['📚Школа📚', '🎲Прочее🎲', '👤Аккаунт👤', '❓Помощь❓']),
 
-            '👤Аккаунт👤': RangeNumberReplyButton(
-                ['📂Информация📂', '🔢Номер класса🔢', '🔡Буква класса🔡', '🔄Главное меню🔄']),
+            '👤Аккаунт👤': RangeNumberReplyButton(['📂Информация📂', '🔢Номер класса🔢', '🔡Буква класса🔡', '🔄Главное меню🔄']),
 
             '📚Школа📚': RangeNumberReplyButton(
                 ['📃Расписание📃', '📰Новости📰', '📘Доп материалы📘', '🔄Главное меню🔄']),
@@ -46,205 +48,206 @@ class SchoolBot(Bot):
                 ['🌤Погода🌤', '😺Котики😺', '☝️Цитаты☝️', '🦠COVID-19🦠', '🔄Главное меню🔄']),
         }
         self.__subjects = ('Физика', 'Алгебра', 'Русский язык', 'Информатика')
-
         # погодник
         presets = get_default_config()
         presets['language'] = 'ru'
         self.__owm = pyowm.OWM(owm_token, presets)
 
-        self.__dp = Dispatcher(self)
+    def __str__(self):
+        return f'Токен:{self.token}'
 
     @staticmethod
     def __permissions(admin_only: bool = False, logging: bool = False):
-        async def nothing(): pass
-
         def dec(func):
             def checker(message: types.Message):
                 user = dbcontrol.User(message.from_user.id)
-                user.set_sent_messages(user.info['sent_messages'] + 1)
+                start_time = time.time()
 
                 if admin_only:
                     if user.info['admin_status']:
-                        data = func(message)
-                    else:
-                        data = nothing()
+                        func(message)
 
                 elif not user.info['ban_status']:
-                    data = func(message)
+                    func(message)
+
                 else:
-                    data = nothing()
+                    pass
 
                 if logging:
                     print(f'[LOG] <id={message.from_user.id}> '
                           f'<name={message.from_user.username}> '
                           f'<admin={user.info["admin_status"]}> '
                           f'<ban={user.info["ban_status"]}> '
-                          f'<text={message.text}> ')
+                          f'<text={message.text}> '
+                          f'<time={time.time() - start_time}>')
 
-                return data
             return checker
+
         return dec
 
     def run(self):
-        @self.__dp.message_handler(commands=['start'])
-        async def start_message(message: types.Message):
+
+        @self.message_handler(commands=['start'])
+        def start_message(message: types.Message):
             db = dbcontrol.DBcontrol()
 
             if not db.user_exists(message.from_user.id):
 
                 db.add_user(message.from_user.id)
 
-                with open("media/text/hello_message.txt", encoding="utf-8") as f:
-                    await message.answer(f.read().replace("%name%", message.from_user.first_name),
-                                         reply_markup=self.__dirs['🔄Главное меню🔄'])
+                with open("media/text/hello_message.txt") as f:
+                    self.send_message(message.chat.id, f.read().replace("%name%", message.from_user.first_name),
+                                      reply_markup=self.__dirs['🔄Главное меню🔄'])
             else:
-                await message.answer("Рад видеть вас снова! 🙂", reply_markup=self.__dirs['🔄Главное меню🔄'])
+                self.send_message(message.chat.id, "Рад видеть вас снова! 🙂",
+                                  reply_markup=self.__dirs['🔄Главное меню🔄'])
 
             db.close()
 
-        @self.__dp.message_handler(commands=['ban'])
+        @self.message_handler(commands=['ban'])
         @self.__permissions(admin_only=True, logging=True)
-        async def ban_command(message: types.Message):
+        def ban_command(message: types.Message):
             try:
 
-                user_id = message.text.split(' ')[1]
-                status = message.text.split(' ')[2]
+                user_id = str(message.text).split(' ')[1]
+                status = str(message.text).split(' ')[2]
                 dbcontrol.User(int(user_id)).ban(True if status.lower() == 'true' else False)
 
-                await message.answer("✅Успех✅")
+                self.send_message(message.chat.id, "✅Успех✅")
 
             except IndexError:
-                await message.answer("⛔Прорущен аргумент!⛔")
+                self.send_message(message.chat.id, "⛔Прорущен аргумент!⛔")
 
-        @self.__dp.message_handler(commands=['db'])
+        @self.message_handler(commands=['db'])
         @self.__permissions(admin_only=True, logging=True)
-        async def dump_db(message: types.Message):
+        def dump_db(message: types.Message):
             try:
 
                 line = message.text.split(' ')
                 with open(f"data_bases/{line[1]}", 'rb') as f:
-                    await message.answer_document(message.chat.id, f)
+                    self.send_document(message.chat.id, f)
 
             except FileNotFoundError:
-                await message.answer('⛔База данных  не была найдена⛔')
+                self.send_message(message.chat.id, f'⛔База данных  не была найдена⛔')
 
             except IndexError:
-                await message.answer(f'⛔Нет аргумента⛔')
+                self.send_message(message.chat.id, f'⛔Нет аргумента⛔')
 
-        @self.__dp.message_handler(commands=['post'])
+        @self.message_handler(commands=['post'])
         @self.__permissions(admin_only=True, logging=True)
-        async def post(message: types.Message):
+        def post(message: types.Message):
 
             counter = 0
             db = dbcontrol.DBcontrol()
 
             try:
-                await message.answer('⏺Полезная загрузка начата...⏺')
+                self.send_message(message.chat.id, '⏺Полезная загрузка начата...⏺')
                 for member in db.get_all_users():
                     try:
-
-                        await self.send_message(member[1], message.text[6:], parse_mode='Markdown')
+                        self.send_message(member[1], message.text[9:], parse_mode='Markdown')
                         counter += 1
-                        await sleep(0.1)
-
+                        sleep(0.1)
                     except Exception as e:
                         print(f'[ERROR] {e}')
-
-                await message.answer(f"Выполнено {counter}/{len(db.get_all_users())}")
+                self.send_message(message.chat.id, f"Выполнено {counter}/{len(db.get_all_users())}")
 
             except KeyError:
-                await message.answer(f'⛔Нет аргументов⛔')
+                self.send_message(message.chat.id, f'⛔Нет аргументов⛔')
 
             finally:
                 db.close()
 
-        @self.__dp.message_handler(commands=['admin'])
+        @self.message_handler(commands=['admin'])
         @self.__permissions(admin_only=True, logging=True)
-        async def set_admin(message: types.Message):
+        def set_admin(message: types.Message):
             try:
                 dbcontrol.User(int(message.text.split(' ')[1])).admin(
                     True if message.text.split(' ')[2].lower() == 'true' else False)
-                await message.answer("✅Успех✅")
+                self.send_message(message.chat.id, "✅Успех✅")
 
             except IndexError:
-                await message.answer("⛔Пропущен аргумент!⛔")
+                self.send_message(message.chat.id, "⛔Пропущен аргумент!⛔")
 
-        @self.__dp.callback_query_handler()
-        async def callback_inline(call: types.CallbackQuery):
+        @self.callback_query_handler(func=lambda call: True)
+        def callback_inline(call: types.CallbackQuery):
             user = dbcontrol.User(call.from_user.id)
 
             if call.data in ('9', '10', '11'):
                 user.set_class_number(int(call.data))
-                await call.answer('✅Изменено✅')
+                self.send_message(call.message.chat.id, '✅Изменено✅')
 
             elif call.data in 'АБВГДЛМИСЭ':
                 user.set_class_char(call.data)
-                await call.answer('✅Изменено✅')
+                self.send_message(call.message.chat.id, '✅Изменено✅')
 
             elif call.data in self.__subjects:
                 try:
-                    await call.answer('📶Загружаю📶')
+                    self.send_message(call.message.chat.id, '📶Загружаю📶')
                     with open(f'media/files/классы/{user.info["class_number"]}/доп материалы/{call.data.lower()}/'
                               f'{call.data.lower()}.zip', 'rb') as f:
-                        await self.send_document(call.from_user.id, f)
+                        self.send_document(call.message.chat.id, f)
 
                 except FileNotFoundError:
-                    await call.answer("😓Файл не найден😓")
+                    self.send_message(call.message.chat.id, "😓Файл не найден😓")
 
                 except ConnectionError:
-                    await call.answer('⚠️Не удалось загрузить дополнительный материалы⚠️')
+                    self.send_message(call.message.chat.id, '⚠️Не удалось загрузить дополнительный материалы⚠️')
             else:
                 pass
 
-        @self.__dp.message_handler(content_types=['text'])
+        @self.message_handler(content_types=['text'])
         @self.__permissions(logging=True)
-        async def handle_message(message: types.Message):
+        def handle_message(message: types.Message):
 
             if message.text == '📃Расписание📃':
                 user = dbcontrol.User(message.from_user.id)
                 try:
-                    with open(
-                            f'media/files/классы/{user.info["class_number"]}/расписание/{user.info["class_char"]}.jpg',
-                            'rb') as f:
-                        await message.answer_photo(f)
+                    with open(f'media/files/классы/{user.info["class_number"]}/'
+                              f'расписание/{user.info["class_char"]}.jpg', 'rb') as f:
+                        self.send_photo(message.chat.id, f)
 
                 except FileNotFoundError:
-                    await message.answer('😧Расписание для класса'
-                                         f' {user.info["class_number"]}-{user.info["class_char"]} не было найдено!😧')
+                    self.send_message(message.chat.id, '😧Расписание для класса '
+                                                       f'{user.info["class_number"]}-{user.info["class_char"]} '
+                                                       'не было найдено!😧')
 
             elif message.text == '📚Школа📚':
-                await message.answer('Вы находитесь в разделе «📚Школа📚».', reply_markup=self.__dirs[message.text])
+                self.send_message(message.chat.id, 'Вы находитесь в разделе «📚Школа📚».',
+                                  reply_markup=self.__dirs[message.text])
 
             elif message.text == '🔄Главное меню🔄':
-                await message.answer('Вы вернулись в главное меню.', reply_markup=self.__dirs[message.text])
+                self.send_message(message.chat.id, 'Вы вернулись в главное меню.',
+                                  reply_markup=self.__dirs[message.text])
 
             elif message.text == '📰Новости📰':
                 site = siteparser.News()
-                await message.answer(f'*{site.get_last_news_title()}*\n\n{site.get_last_news_text()}',
-                                     parse_mode='Markdown')
+                self.send_message(message.chat.id, f'*{site.get_last_news_title()}*\n\n{site.get_last_news_text()}',
+                                  parse_mode='Markdown')
 
             elif message.text == '🎲Прочее🎲':
-                await message.answer('В находитесь в разделе «🎲Прочее🎲».', reply_markup=self.__dirs[message.text])
+                self.send_message(message.chat.id, 'В находитесь в разделе «🎲Прочее🎲».',
+                                  reply_markup=self.__dirs[message.text])
 
             elif message.text == '🌤Погода🌤':
                 try:
                     mgr = self.__owm.weather_manager()
                     w = mgr.weather_at_place('Москва').weather
-                    await message.answer("*Погода на сегодня.*\n\n"
-                                         f"*Статус:* {w.detailed_status}\n"
-                                         f"*Температура:* {w.temperature('celsius')['temp']} ℃\n"
-                                         f"*Скорость ветра:* {w.wind()['speed']} м\\с\n"
-                                         f"*Влажность:* {w.humidity}%\n*Облачность:* {w.clouds}%",
-                                         parse_mode='Markdown')
+                    self.send_message(message.chat.id, "*Погода на сегодня.*\n\n"
+                                                       f"*Статус:* {w.detailed_status}\n"
+                                                       f"*Температура:* {w.temperature('celsius')['temp']} ℃\n"
+                                                       f"*Скорость ветра:* {w.wind()['speed']} м\\с\n"
+                                                       f"*Влажность:* {w.humidity}%\n*Облачность:* {w.clouds}%",
+                                      parse_mode='Markdown')
 
                 except Exception as e:
-                    await message.answer(f'⛔{e}⛔')
+                    self.send_message(message.chat.id, f'⛔{e}⛔')
 
             elif message.text == '🦠COVID-19🦠':
-                await message.answer("Минутку...")
+                self.send_message(message.chat.id, "Минутку...")
 
                 information = siteparser.Covid19().getinfo()
-                await message.answer(
+                self.send_message(
+                    message.chat.id,
                     f"*🦠COVID🦠*\n\n🤒Заболело: *{information['all_infected']}* человек.\n"
                     f"😵Умерло: *{information['all_died']}* человек.\n"
                     f"😎Вылечилось: *{information['all_healed']}* человек.\n"
@@ -259,50 +262,58 @@ class SchoolBot(Bot):
                         f.write(requests.get('https://thiscatdoesnotexist.com/').content)
 
                     with open(f'{message.chat.id}.jpg', 'rb') as f:
-                        await message.answer_photo(f)
+                        self.send_photo(message.chat.id, f)
 
                     os.remove(f'{message.chat.id}.jpg')
                 except PermissionError:
-                    await message.answer("⛔Вы отправляете сообщения слишком быстро!⛔")
+                    self.send_message(message.chat.id, "⛔Вы отправляете сообщения слишком быстро!⛔")
 
             elif message.text == '❓Помощь❓':
-                await message.answer(f'Вы перешли в раздел «{message.text}»', reply_markup=self.__dirs[message.text])
+                self.send_message(message.chat.id, f'Вы перешли в раздел «{message.text}»',
+                                  reply_markup=self.__dirs[message.text])
 
             elif message.text == '⚙️Команды⚙️':
                 with open('media/text/commands_help.txt', 'r', encoding="utf-8") as f:
-                    await message.answer(f.read(), parse_mode='Markdown')
+                    self.send_message(message.chat.id, f.read(), parse_mode='Markdown')
 
             elif message.text == '©️GitHub©️':
                 with open('media/text/github.txt', 'r', encoding="utf-8") as f:
-                    await message.answer(f.read(), parse_mode='Markdown')
+                    self.send_message(message.chat.id, f.read(), parse_mode='Markdown')
 
             elif message.text == '💬Контакты💬':
                 with open('media/text/contacts.txt', 'r', encoding="utf-8") as f:
-                    await message.answer(f.read(), parse_mode='Markdown')
+                    self.send_message(message.chat.id, f.read(), parse_mode='Markdown')
 
             elif message.text == '☝️Цитаты☝️':
                 site = siteparser.Quotes()
-                await message.answer(f'{site.get_quote_message()}\n\n*{site.get_author()}*', parse_mode="Markdown")
+                self.send_message(message.chat.id, f'{site.get_quote_message()}\n\n*{site.get_author()}*',
+                                  parse_mode="Markdown")
 
             elif message.text == '👤Аккаунт👤':
-                await message.answer(f'Вы перешли в раздел «{message.text}»', reply_markup=self.__dirs[message.text])
+                self.send_message(message.chat.id, f'Вы перешли в раздел «{message.text}»',
+                                  reply_markup=self.__dirs[message.text])
 
             elif message.text == '📂Информация📂':
                 user = dbcontrol.User(message.from_user.id)
-                await message.answer(f"*ИНФОРМАЦИЯ ОБ АККАУНТЕ*\n\n*ID:* {user.info['id']}\n"
-                                     f"*Дата регистрации:* `{user.info['reg_date']}`\n"
-                                     f"*Права администратора:* {'✅' if user.info['admin_status'] else '❌'}\n"
-                                     f"*Блокировка:* {'❌' if not user.info['ban_status'] else '⚠'}\n"
-                                     f"*Класс:* {user.info['class_number']}-{user.info['class_char']}\n"
-                                     f"*Отправленно сообщений:* {user.info['sent_messages']}", parse_mode='Markdown')
+                self.send_message(message.chat.id, f"*ИНФОРМАЦИЯ ОБ АККАУНТЕ*\n\n*ID:* {user.info['id']}\n"
+                                                   f"*Дата регистрации:* `{user.info['reg_date']}`\n"
+                                                   f"*Права администратора:* "
+                                                   f"{'✅' if user.info['admin_status'] else '❌'}\n"
+                                                   f"*Блокировка:* {'❌' if not user.info['ban_status'] else '⚠'}\n"
+                                                   f"*Класс:* {user.info['class_number']}-{user.info['class_char']}\n"
+                                                   f"*Отправленно сообщений:* {user.info['sent_messages']}",
+                                  parse_mode='Markdown')
 
             elif message.text == '🔢Номер класса🔢':
-                await message.answer('Выберите класс', reply_markup=RangeNumberInLineButton(range(9, 12)))
+                self.send_message(message.chat.id, 'Выберите класс',
+                                  reply_markup=RangeNumberInLineButton(range(9, 12)))
 
             elif message.text == '📘Доп материалы📘':
-                await message.answer("👇Выберите предмет👇", reply_markup=RangeNumberInLineButton(self.__subjects))
+                self.send_message(message.chat.id, "👇Выберите предмет👇",
+                                  reply_markup=RangeNumberInLineButton(self.__subjects))
 
             elif message.text == '🔡Буква класса🔡':
-                await message.answer('Выберите  букву класса', reply_markup=RangeNumberInLineButton('АБВГДЛМИСЭ'))
+                self.send_message(message.chat.id, 'Выберите  букву класса',
+                                  reply_markup=RangeNumberInLineButton('АБВГДЛМИСЭ'))
 
-        executor.start_polling(self.__dp, skip_updates=True)
+        self.polling()
