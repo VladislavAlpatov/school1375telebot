@@ -54,36 +54,63 @@ class SchoolBot(Bot):
         self.__dp = Dispatcher(self)
         self.__eventloop = asyncio.get_event_loop()
 
+    async def __request_banner(self):
+        while True:
+            print("[LOG] Запускаю проверку на запросы...")
+
+            db = dbcontrol.DBcontrol()
+            counter = 0
+
+            for member in db.get_all_users():
+
+                if member.info['sent_messages_per_minute'] > 30:
+                    member.ban()
+                    await self.send_message(member.info['id'], '⚠Вы были заблокированы!⚠')
+                    counter += 1
+
+                member.set_user_sent_messages_per_minute(0)
+            print(f'Забанено {counter}')
+
+            await asyncio.sleep(60)
+
     @staticmethod
     def __permissions(admin_only: bool = False, logging: bool = False):
-        async def nothing(): pass
+        async def nothing():
+            pass
 
         def dec(func):
             def checker(message: types.Message):
-                user = dbcontrol.User(message.from_user.id)
-                user.set_sent_messages(user.info['sent_messages'] + 1)
+                try:
+                    user = dbcontrol.User(message.from_user.id)
 
-                if admin_only:
-                    if user.info['admin_status']:
+                    user.set_sent_messages(user.info['sent_messages'] + 1)
+                    user.set_user_sent_messages_per_minute(user.info['sent_messages_per_minute'] + 1)
+
+                    if admin_only:
+                        if user.info['admin_status']:
+                            data = func(message)
+                        else:
+                            data = nothing()
+
+                    elif not user.info['ban_status']:
                         data = func(message)
                     else:
                         data = nothing()
 
-                elif not user.info['ban_status']:
-                    data = func(message)
-                else:
-                    data = nothing()
-
-                if logging:
-                    print(f'[LOG] <id={message.from_user.id}> '
-                          f'<Telegram=@{message.from_user.username}> '
-                          f'<user_name={user.info["user_name"]}> '
-                          f'<admin={user.info["admin_status"]}> '
-                          f'<ban={user.info["ban_status"]}> '
-                          f'<text={message.text}> ')
+                    if logging:
+                        print(f'[LOG] <id={message.from_user.id}> '
+                              f'<Telegram=@{message.from_user.username}> '
+                              f'<user_name={user.info["user_name"]}> '
+                              f'<admin={user.info["admin_status"]}> '
+                              f'<ban={user.info["ban_status"]}> '
+                              f'<text={message.text}> ')
+                except IndexError:
+                    return nothing()
 
                 return data
+
             return checker
+
         return dec
 
     def run(self):
@@ -191,8 +218,10 @@ class SchoolBot(Bot):
         async def set_name(message: types.Message):
             try:
 
-                dbcontrol.User(message.from_user.id).set_user_name(message.text.split(' ')[1])
-                await message.answer("✅Успех✅")
+                if dbcontrol.User(message.from_user.id).set_user_name(message.text.split(' ')[1]):
+                    await message.answer("✅Успех✅")
+                else:
+                    await message.answer("⚠Это имя занято⚠")
 
             except IndexError:
                 await message.answer("⛔Нет аргумента⛔")
@@ -345,6 +374,5 @@ class SchoolBot(Bot):
             elif message.text == '🔡Буква класса🔡':
                 await message.answer('Выберите  букву класса', reply_markup=RangeNumberInLineButton('АБВГДЛМИСЭ'))
 
-        # self.__eventloop.create_task(self.pol())
-
+        self.__eventloop.create_task(self.__request_banner())
         executor.start_polling(self.__dp, skip_updates=True)
