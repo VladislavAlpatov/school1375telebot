@@ -144,7 +144,7 @@ class SchoolBot(Bot):
 
                 with open("media/text/hello_message.txt", encoding="utf-8") as f:
                     await message.answer(f.read().replace("%name%", message.from_user.first_name),
-                                         reply_markup=self.__dirs['🔄Главное меню🔄'])
+                                         reply_markup=self.__dirs['🔄Главное меню🔄'], parse_mode='Markdown')
             else:
                 await message.answer("Рад видеть вас снова! 🙂", reply_markup=self.__dirs['🔄Главное меню🔄'])
 
