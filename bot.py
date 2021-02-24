@@ -177,6 +177,7 @@ class SchoolBot(Bot):
 
                 user = dbcontrol.User(user_id)
                 await message.answer(f"*ПРОСМОТР ПРОФИЛЯ*\n\n"
+                                     f"*ИМЯ:* {user.info['user_name']}\n"
                                      f"*ID:* `{user.info['id']}`\n"
                                      f"*КЛАСС:* {user.info['class_number']}-{user.info['class_char']}\n\n"
                                      f"*АДМИН:* {'✅' if user.info['admin_status'] else '❌'}\n"
@@ -229,11 +230,16 @@ class SchoolBot(Bot):
         @self.__permissions(logging=True)
         async def set_name(message: types.Message):
             try:
+                nick = message.text.split(' ')[1]
 
-                if dbcontrol.User(message.from_user.id).set_user_name(message.text.split(' ')[1]):
-                    await message.answer("✅Успех✅")
+                if len(nick) < 15:
+
+                    if dbcontrol.User(message.from_user.id).set_user_name(nick):
+                        await message.answer("✅Успех✅")
+                    else:
+                        await message.answer("⚠Это имя занято⚠")
                 else:
-                    await message.answer("⚠Это имя занято⚠")
+                    await message.answer('⚠Это имя очень длинное⚠')
 
             except IndexError:
                 await message.answer("⛔Нет аргумента⛔")
@@ -360,12 +366,12 @@ class SchoolBot(Bot):
             elif message.text == '📂Информация📂':
                 user = dbcontrol.User(message.from_user.id)
                 await message.answer(f"*ИНФОРМАЦИЯ ОБ АККАУНТЕ*\n\n"
-                                     f"*ID:* {user.info['id']}\n"
-                                     f"*Дата регистрации:* `{user.info['reg_date']}`\n"
                                      f"*Имя:* {user.info['user_name']}\n"
+                                     f"*ID:* {user.info['id']}\n"
+                                     f"*Класс:* {user.info['class_number']}-{user.info['class_char']}\n"
+                                     f"*Дата регистрации:* `{user.info['reg_date']}`\n\n"
                                      f"*Права администратора:* {'✅' if user.info['admin_status'] else '❌'}\n"
-                                     f"*Блокировка:* {'❌' if not user.info['ban_status'] else '⚠'}\n"
-                                     f"*Класс:* {user.info['class_number']}-{user.info['class_char']}\n",
+                                     f"*Блокировка:* {'❌' if not user.info['ban_status'] else '⚠'}\n",
                                      parse_mode='Markdown')
 
             elif message.text == '🔢Номер класса🔢':
@@ -377,7 +383,7 @@ class SchoolBot(Bot):
             elif message.text == '🔡Буква класса🔡':
                 await message.answer('Выберите  букву класса', reply_markup=RangeNumberInLineButton('АБВГДЛМИСЭ'))
 
-        self.__eventloop.create_task(self.__request_banner())
-        self.__eventloop.create_task(self.__web_updater(360))
+        # self.__eventloop.create_task(self.__request_banner())
+        # self.__eventloop.create_task(self.__web_updater(360))
 
         executor.start_polling(self.__dp, skip_updates=True)
