@@ -61,7 +61,7 @@ class SchoolBot(Bot):
             db = dbcontrol.DBcontrol()
             counter = 0
 
-            for member in db.get_all_users():
+            for member in db.get_all_users(skip_banned=True):
 
                 if member.info['sent_messages_per_minute'] > 30:
                     member.ban()
@@ -173,13 +173,14 @@ class SchoolBot(Bot):
                     await message.answer("⛔Пользователь не найден!⛔")
                     return
 
+                await self.get_chat_member(user_id, user_id)
+
                 user = dbcontrol.User(user_id)
                 await message.answer(f"*ПРОСМОТР ПРОФИЛЯ*\n\n"
-                                     f"*ТEЛЕГРАМ:* @{message.from_user.username}\n"
                                      f"*ID:* `{user.info['id']}`\n"
                                      f"*КЛАСС:* {user.info['class_number']}-{user.info['class_char']}\n\n"
                                      f"*АДМИН:* {'✅' if user.info['admin_status'] else '❌'}\n"
-                                     f"*БЛОКИРОВКА:* {'❌' if not user.info['ban_status'] else '⚠'}\n\n"
+                                     f"*БЛОКИРОВКА:* {'❌' if not user.info['ban_status'] else '✅'}\n\n"
                                      f"*ЗАРЕГИСТРИРОВАН*: `{user.info['reg_date']}`",
                                      parse_mode='Markdown')
 
@@ -207,20 +208,19 @@ class SchoolBot(Bot):
 
             counter = 0
             db = dbcontrol.DBcontrol()
-
+            members = db.get_all_users(skip_banned=True)
             try:
                 await message.answer('⏺Полезная загрузка начата...⏺')
-                for member in db.get_all_users():
+                for member in members:
                     try:
-                        if not member.info['ban_status']:
-                            await self.send_message(member[1], message.text[6:], parse_mode='Markdown')
-                            counter += 1
+                        await self.send_message(member.info['id'], message.text[6:], parse_mode='Markdown')
+                        counter += 1
                         await asyncio.sleep(0.1)
 
                     except Exception as e:
                         print(f'[ERROR] {e}')
 
-                await message.answer(f"Выполнено {counter}/{len(db.get_all_users())}")
+                await message.answer(f"Выполнено {counter}/{len(members)}")
 
             except KeyError:
                 await message.answer(f'⛔Нет аргументов⛔')

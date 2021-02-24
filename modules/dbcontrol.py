@@ -87,11 +87,19 @@ class DBcontrol:
             return self.__cursor.execute("INSERT INTO `members` (`account_id`, `reg_date`, `user_name`) VALUES(?,?,?)",
                                          (user_id, f"{date.day}.{date.month}.{date.year}", user_id))
 
-    def get_all_users(self):
+    def get_all_users(self, skip_banned: bool = False):
         users = []
+
         with self.__connection:
-            for member_id in self.__cursor.execute("SELECT `account_id` FROM `members`").fetchall():
+
+            if skip_banned:
+                data = self.__cursor.execute("SELECT `account_id` FROM `members` WHERE NOT `ban`").fetchall()
+            else:
+                data = self.__cursor.execute("SELECT `account_id` FROM `members`").fetchall()
+
+            for member_id in data:
                 users.append(User(member_id[0]))
+
         return users
 
     def get_user_id_by_name(self, name: str) -> int:
