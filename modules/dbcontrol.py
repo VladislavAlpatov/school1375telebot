@@ -18,8 +18,7 @@ class User:
                          'reg_date': data[4],
                          'class_number': data[5],
                          'class_char': data[6],
-                         'sent_messages': data[7],
-                         'sent_messages_per_minute': data[8]}
+                         'sent_messages_per_minute': data[7]}
 
     def ban(self, statement: bool = True):
         with self.__connection:

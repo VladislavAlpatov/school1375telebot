@@ -56,7 +56,7 @@ class SchoolBot(Bot):
 
     async def __request_banner(self):
         while True:
-            print("[LOG] Запускаю проверку на запросы...")
+            print("[BAN-LOG] Запускаю проверку на запросы...")
 
             db = dbcontrol.DBcontrol()
             counter = 0
@@ -69,9 +69,30 @@ class SchoolBot(Bot):
                     counter += 1
 
                 member.set_user_sent_messages_per_minute(0)
-            print(f'[LOG] Забанено записей {counter}')
+            print(f'[BAN-LOG] Забанено записей {counter}')
 
             await asyncio.sleep(60)
+
+    @staticmethod
+    async def __web_updater(update_time: int = 60):
+        while True:
+            print('[WEB-LOG] Обновляю данные...')
+            news = siteparser.News()
+            covid19 = siteparser.Covid19().getinfo()
+
+            with open('media/text/news.txt', 'w') as f:
+                f.write(f'*{news.get_last_news_title()}*\n\n{news.get_last_news_text()}')
+
+            with open('media/text/covid.txt', 'w', encoding='utf-8') as f:
+                f.write(f"*🦠COVID🦠*\n\n🤒Заболело: *{covid19['all_infected']}* человек.\n"
+                        f"😵Умерло: *{covid19['all_died']}* человек.\n"
+                        f"😎Вылечилось: *{covid19['all_healed']}* человек.\n"
+                        f"🤒Заразилось за день: *{covid19['last_infected']}* человек.\n\n"
+                        "*Пожалуйста соблюдайте дистанцию и носите маску!*")
+
+            print('[WEB-LOG] Данные успешно обновлены')
+            del news, covid19
+            await asyncio.sleep(update_time)
 
     @staticmethod
     def __permissions(admin_only: bool = False, logging: bool = False):
@@ -83,9 +104,6 @@ class SchoolBot(Bot):
                 try:
                     user = dbcontrol.User(message.from_user.id)
 
-                    user.set_sent_messages(user.info['sent_messages'] + 1)
-                    user.set_user_sent_messages_per_minute(user.info['sent_messages_per_minute'] + 1)
-
                     if admin_only:
                         if user.info['admin_status']:
                             data = func(message)
@@ -93,12 +111,15 @@ class SchoolBot(Bot):
                             data = nothing()
 
                     elif not user.info['ban_status']:
+                        user.set_user_sent_messages_per_minute(user.info['sent_messages_per_minute'] + 1)
+
                         data = func(message)
                     else:
+
                         data = nothing()
 
                     if logging:
-                        print(f'[LOG] <id={message.from_user.id}> '
+                        print(f'[CHAT-LOG] <id={message.from_user.id}> '
                               f'<Telegram=@{message.from_user.username}> '
                               f'<user_name={user.info["user_name"]}> '
                               f'<admin={user.info["admin_status"]}> '
@@ -155,12 +176,11 @@ class SchoolBot(Bot):
                 user = dbcontrol.User(user_id)
                 await message.answer(f"*ПРОСМОТР ПРОФИЛЯ*\n\n"
                                      f"*ТEЛЕГРАМ:* @{message.from_user.username}\n"
-                                     f"*ID:* {user.info['id']}\n"
+                                     f"*ID:* `{user.info['id']}`\n"
+                                     f"*КЛАСС:* {user.info['class_number']}-{user.info['class_char']}\n\n"
                                      f"*АДМИН:* {'✅' if user.info['admin_status'] else '❌'}\n"
-                                     f"*КЛАСС:* {user.info['class_number']}-{user.info['class_char']}\n"
-                                     f"*БЛОКИРОВКА:* {'❌' if not user.info['ban_status'] else '⚠'}\n"
-                                     f"*ЗАРЕГИСТРИРОВАН*: `{user.info['reg_date']}`\n"
-                                     f"*ОТПРАВИЛ СООБЩЕНИЙ:* {user.info['sent_messages']}",
+                                     f"*БЛОКИРОВКА:* {'❌' if not user.info['ban_status'] else '⚠'}\n\n"
+                                     f"*ЗАРЕГИСТРИРОВАН*: `{user.info['reg_date']}`",
                                      parse_mode='Markdown')
 
             except IndexError:
@@ -192,9 +212,9 @@ class SchoolBot(Bot):
                 await message.answer('⏺Полезная загрузка начата...⏺')
                 for member in db.get_all_users():
                     try:
-
-                        await self.send_message(member[1], message.text[6:], parse_mode='Markdown')
-                        counter += 1
+                        if not member.info['ban_status']:
+                            await self.send_message(member[1], message.text[6:], parse_mode='Markdown')
+                            counter += 1
                         await asyncio.sleep(0.1)
 
                     except Exception as e:
@@ -279,9 +299,8 @@ class SchoolBot(Bot):
                 await message.answer('Вы вернулись в главное меню.', reply_markup=self.__dirs[message.text])
 
             elif message.text == '📰Новости📰':
-                site = siteparser.News()
-                await message.answer(f'*{site.get_last_news_title()}*\n\n{site.get_last_news_text()}',
-                                     parse_mode='Markdown')
+                with open('media/text/news.txt', 'r') as f:
+                    await message.answer(f.read(), parse_mode='Markdown')
 
             elif message.text == '🎲Прочее🎲':
                 await message.answer('В находитесь в разделе «🎲Прочее🎲».', reply_markup=self.__dirs[message.text])
@@ -300,16 +319,8 @@ class SchoolBot(Bot):
                     await message.answer(f'⛔{e}⛔')
 
             elif message.text == '🦠COVID-19🦠':
-                await message.answer("Минутку...")
-
-                information = siteparser.Covid19().getinfo()
-                await message.answer(
-                    f"*🦠COVID🦠*\n\n🤒Заболело: *{information['all_infected']}* человек.\n"
-                    f"😵Умерло: *{information['all_died']}* человек.\n"
-                    f"😎Вылечилось: *{information['all_healed']}* человек.\n"
-                    f"🤒Заразилось за день: *{information['last_infected']}* человек.\n\n"
-                    "*Пожалуйста соблюдайте дистанцию и носите маску!*",
-                    parse_mode='Markdown')
+                with open('media/text/covid.txt', 'r', encoding='utf-8') as f:
+                    await message.answer(f.read(), parse_mode='Markdown')
 
             elif message.text == '😺Котики😺':
                 try:
@@ -354,8 +365,8 @@ class SchoolBot(Bot):
                                      f"*Имя:* {user.info['user_name']}\n"
                                      f"*Права администратора:* {'✅' if user.info['admin_status'] else '❌'}\n"
                                      f"*Блокировка:* {'❌' if not user.info['ban_status'] else '⚠'}\n"
-                                     f"*Класс:* {user.info['class_number']}-{user.info['class_char']}\n"
-                                     f"*Отправленно сообщений:* {user.info['sent_messages']}", parse_mode='Markdown')
+                                     f"*Класс:* {user.info['class_number']}-{user.info['class_char']}\n",
+                                     parse_mode='Markdown')
 
             elif message.text == '🔢Номер класса🔢':
                 await message.answer('Выберите класс', reply_markup=RangeNumberInLineButton(range(9, 12)))
@@ -367,4 +378,6 @@ class SchoolBot(Bot):
                 await message.answer('Выберите  букву класса', reply_markup=RangeNumberInLineButton('АБВГДЛМИСЭ'))
 
         self.__eventloop.create_task(self.__request_banner())
+        self.__eventloop.create_task(self.__web_updater(360))
+
         executor.start_polling(self.__dp, skip_updates=True)
