@@ -76,7 +76,7 @@ class DBcontrol:
         self.__connection = sqlite3.connect('data_bases/data.db')
         self.__cursor = self.__connection.cursor()
 
-    def user_exists(self, user_id: int):
+    def user_exists(self, user_id: int) -> bool:
         with self.__connection:
             result = self.__cursor.execute('SELECT * FROM `members` WHERE `account_id` = ?', (user_id,)).fetchall()
             return bool(len(result))
