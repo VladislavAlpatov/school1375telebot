@@ -327,7 +327,17 @@ class SchoolBot(Bot):
                     await message.answer(f.read(), parse_mode='Markdown')
 
             elif message.text == '😺Котики😺':
-                pass
+                try:
+
+                    with open(f'{message.chat.id}.jpg', 'wb') as f:
+                        f.write(requests.get('https://thiscatdoesnotexist.com/').content)
+
+                    with open(f'{message.chat.id}.jpg', 'rb') as f:
+                        await message.answer_photo(f)
+
+                    os.remove(f'{message.chat.id}.jpg')
+                except PermissionError:
+                    await message.answer("⛔Вы отправляете сообщения слишком быстро!⛔")
 
             elif message.text == '❓Помощь❓':
                 await message.answer(f'Вы перешли в раздел «{message.text}»', reply_markup=self.__dirs[message.text])
