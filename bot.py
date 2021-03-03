@@ -63,11 +63,13 @@ class SchoolBot(Bot):
 
                 if member.info['sent_messages_per_minute'] >= max_requests:
                     member.ban()
-                    with open('media/text/help/on_ban_message.txt', 'r') as f:
-                        await self.send_message(member.info['id'], f.read())
+                    with open('media/text/help/on_ban_message.txt', encoding='utf-8') as f:
+                        await self.send_message(member.info['id'], f.read(), parse_mode='Markdown')
+
                     counter += 1
 
                 member.set_user_sent_messages_per_minute(0)
+
             print(f'[BAN-LOG] Выполнена проверка на защиту от DDoS\'а, забанено {counter} записей')
 
             await asyncio.sleep(cool_down)
@@ -325,17 +327,7 @@ class SchoolBot(Bot):
                     await message.answer(f.read(), parse_mode='Markdown')
 
             elif message.text == '😺Котики😺':
-                try:
-
-                    with open(f'{message.chat.id}.jpg', 'wb') as f:
-                        f.write(requests.get('https://thiscatdoesnotexist.com/').content)
-
-                    with open(f'{message.chat.id}.jpg', 'rb') as f:
-                        await message.answer_photo(f)
-
-                    os.remove(f'{message.chat.id}.jpg')
-                except PermissionError:
-                    await message.answer("⛔Вы отправляете сообщения слишком быстро!⛔")
+                pass
 
             elif message.text == '❓Помощь❓':
                 await message.answer(f'Вы перешли в раздел «{message.text}»', reply_markup=self.__dirs[message.text])
