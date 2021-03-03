@@ -87,7 +87,7 @@ class DBcontrol:
             return self.__cursor.execute("INSERT INTO `members` (`account_id`, `reg_date`, `user_name`) VALUES(?,?,?)",
                                          (user_id, f"{date.day}.{date.month}.{date.year}", user_id))
 
-    def get_all_users(self, skip_banned: bool = False):
+    def get_all_users(self, skip_banned: bool = False) -> list:
         users = []
 
         with self.__connection:
