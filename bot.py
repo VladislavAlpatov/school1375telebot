@@ -5,6 +5,7 @@ import requests
 import os
 from pyowm.utils.config import get_default_config
 import asyncio
+from fuzzywuzzy import fuzz
 
 
 class RangeNumberInLineButton(types.InlineKeyboardMarkup):
@@ -47,14 +48,27 @@ class SchoolBot(Bot):
         }
         self.__subjects = ('Физика', 'Алгебра', 'Русский язык', 'Информатика')
 
+        # txt файлы
+        self.__question_files = ('school_site',
+                                 'how_to_connect_to_lesson')
         # погодник
         presets = get_default_config()
         presets['language'] = 'ru'
-
         self.__owm = pyowm.OWM(owm_token, presets)
-        self.__dp = Dispatcher(self)
 
+        # бот
+        self.__dp = Dispatcher(self)
         self.__eventloop = asyncio.get_event_loop()
+
+    @staticmethod
+    def __compare(string: str, obj, percent: int):
+        """
+        Сравнение строк
+        """
+        for i in obj:
+            if fuzz.ratio(string, i) >= percent:
+                return True
+        return False
 
     async def __request_banner(self, cool_down: int = 60, max_requests: int = 30):
         while True:
@@ -254,6 +268,19 @@ class SchoolBot(Bot):
 
             except IndexError:
                 await message.answer("⛔Пропущен аргумент!⛔")
+
+        @self.__dp.message_handler(commands=['ask'])
+        @self.__permissions(logging=True)
+        async def ask_command(message: types.Message):
+            text = message.text[4:]
+
+            for file in self.__question_files:
+                with open(f'media/text/questions/{file}.txt', encoding='utf-8') as f:
+                    if self.__compare(text, f.read().split('\n'), 60):
+                        with open(f'media/text/questions/{file}_answer.txt', encoding='utf-8') as f2:
+                            await message.answer(f2.read(), parse_mode='Markdown')
+                        return
+            await message.answer('На ваш вопрос не был найден ответ 😢')
 
         @self.__dp.callback_query_handler()
         async def callback_inline(call: types.CallbackQuery):
