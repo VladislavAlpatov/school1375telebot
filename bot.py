@@ -50,8 +50,10 @@ class SchoolBot(Bot):
         # погодник
         presets = get_default_config()
         presets['language'] = 'ru'
+
         self.__owm = pyowm.OWM(owm_token, presets)
         self.__dp = Dispatcher(self)
+
         self.__eventloop = asyncio.get_event_loop()
 
     async def __request_banner(self, cool_down: int = 60, max_requests: int = 30):
