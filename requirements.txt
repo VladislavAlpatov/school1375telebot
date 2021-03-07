@@ -4,3 +4,5 @@ bs4
 pyowm
 aiogram
 colorama
+fuzzywuzzy
+beautifulsoup4
