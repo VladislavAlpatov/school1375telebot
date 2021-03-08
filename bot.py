@@ -437,6 +437,7 @@ class SchoolBot(Bot):
 
                     with open(f'{message.from_user.id}.png', 'rb') as f:
                         await message.answer_photo(photo=f)
+                    os.remove(f'{message.from_user.id}.png')
                 except Exception:
                     pass
 
