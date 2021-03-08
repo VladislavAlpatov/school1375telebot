@@ -6,6 +6,7 @@ import os
 from pyowm.utils.config import get_default_config
 import asyncio
 from fuzzywuzzy import fuzz
+from PIL import ImageDraw, ImageFont, Image
 
 
 class RangeNumberInLineButton(types.InlineKeyboardMarkup):
@@ -352,16 +353,27 @@ class SchoolBot(Bot):
 
             elif message.text == '🌤Погода🌤':
                 try:
+
                     city = str(dbcontrol.User(message.from_user.id).info['city'])
                     w = self.__owm.weather_manager().weather_at_place(city).weather
 
-                    await message.answer(f"*Погода в городе \"{city}\"*\n\n"
-                                         f"*Статус:* {w.detailed_status}\n"
-                                         f"*Температура:* {w.temperature('celsius')['temp']} ℃\n"
-                                         f"*Скорость ветра:* {w.wind()['speed']} м\\с\n"
-                                         f"*Влажность:* {w.humidity}%\n*Облачность:* {w.clouds}%",
-                                         parse_mode='Markdown')
+                    with Image.open('media/images/weather_bg.png') as body:
+                        draw = ImageDraw.Draw(body)
+                        font = ImageFont.truetype('media/fonts/Arial bold.ttf', 62, encoding="utf-8")
 
+                        draw.text((0, 0), city, font=font, fill=(255, 255, 255))
+                        draw.text((8, 85), f'Статус: {w.detailed_status}\n'
+                                           f"Температура: {w.temperature('celsius')['temp']} C\n"
+                                           f"Скорость ветра: {w.wind()['speed']} м\\с\n"
+                                           f"Влажность: {w.humidity}%\n"
+                                           f"Облачность: {w.clouds}%",
+                                  font=font, fill=(255, 255, 255))
+                        body.save(f'{message.from_user.id}.png')
+
+                    with open(f'{message.from_user.id}.png', 'rb') as f:
+                        await message.answer_photo(photo=f)
+
+                    os.remove(f'{message.from_user.id}.png')
                 except Exception as e:
                     await message.answer(f'⛔{e}⛔')
 
@@ -377,7 +389,6 @@ class SchoolBot(Bot):
 
                     with open(f'{message.chat.id}.jpg', 'rb') as f:
                         await message.answer_photo(f)
-
                     os.remove(f'{message.chat.id}.jpg')
                 except PermissionError:
                     await message.answer("⛔Вы отправляете сообщения слишком быстро!⛔")
