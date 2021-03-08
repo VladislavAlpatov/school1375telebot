@@ -6,7 +6,6 @@ import os
 from pyowm.utils.config import get_default_config
 import asyncio
 from fuzzywuzzy import fuzz
-from PIL import ImageDraw, ImageFont, Image
 
 
 class RangeNumberInLineButton(types.InlineKeyboardMarkup):
@@ -146,7 +145,9 @@ class SchoolBot(Bot):
                     return nothing()
 
                 return data
+
             return checker
+
         return dec
 
     def run(self):
@@ -191,14 +192,22 @@ class SchoolBot(Bot):
                 await self.get_chat_member(user_id, user_id)
 
                 user = dbcontrol.User(user_id)
-                await message.answer(f"*ПРОСМОТР ПРОФИЛЯ*\n\n"
-                                     f"*ИМЯ:* {user.info['user_name']}\n"
-                                     f"*ID:* `{user.info['id']}`\n"
-                                     f"*КЛАСС:* {user.info['class_number']}-{user.info['class_char']}\n\n"
-                                     f"*АДМИН:* {'✅' if user.info['admin_status'] else '❌'}\n"
-                                     f"*БЛОКИРОВКА:* {'❌' if not user.info['ban_status'] else '✅'}\n\n"
-                                     f"*ЗАРЕГИСТРИРОВАН*: `{user.info['reg_date']}`",
-                                     parse_mode='Markdown')
+
+                card = Card.Card('#40c192' if not user.info['ban_status'] else '#ea4b4b')
+                card.title('media/fonts/Arial bold.ttf', '#ffff', 62, str(user.info['user_name']))
+                card.text('media/fonts/Arial bold.ttf', '#ffff', 50,
+                          f"ID: {user.info['id']}\n"
+                          f"Класс: {user.info['class_number']}-{user.info['class_char']}\n"
+                          f"Дата регистрации: {user.info['reg_date']}\n"
+                          f"Город: {user.info['city']}\n"
+                          f"Права администратора: {'Да' if user.info['admin_status'] else 'Нет'}\n"
+                          )
+                card.save(f'{message.from_user.id}.png')
+
+                with open(f'{message.from_user.id}.png', 'rb') as f:
+                    await message.answer_photo(photo=f)
+
+                os.remove(f'{message.from_user.id}.png')
 
             except IndexError:
                 await message.answer("⛔Прорущен аргумент!⛔")
@@ -413,16 +422,23 @@ class SchoolBot(Bot):
                 await message.answer(f'Вы перешли в раздел «{message.text}»', reply_markup=self.__dirs[message.text])
 
             elif message.text == '📂Информация📂':
-                user = dbcontrol.User(message.from_user.id)
-                await message.answer(f"*ИНФОРМАЦИЯ ОБ АККАУНТЕ*\n\n"
-                                     f"*Имя:* {user.info['user_name']}\n"
-                                     f"*ID:* {user.info['id']}\n"
-                                     f"*Класс:* {user.info['class_number']}-{user.info['class_char']}\n"
-                                     f"*Дата регистрации:* `{user.info['reg_date']}`\n"
-                                     f"*Город:* {user.info['city']}\n"
-                                     f"*Права администратора:* {'✅' if user.info['admin_status'] else '❌'}\n"
-                                     f"*Блокировка:* {'❌' if not user.info['ban_status'] else '⚠'}\n",
-                                     parse_mode='Markdown')
+                try:
+                    user = dbcontrol.User(message.from_user.id)
+                    card = Card.Card('#40c192' if not user.info['ban_status'] else '#ea4b4b')
+                    card.title('media/fonts/Arial bold.ttf', '#ffff', 62, str(user.info['user_name']))
+                    card.text('media/fonts/Arial bold.ttf', '#ffff', 50,
+                              f"ID: {user.info['id']}\n"
+                              f"Класс: {user.info['class_number']}-{user.info['class_char']}\n"
+                              f"Дата регистрации: {user.info['reg_date']}\n"
+                              f"Город: {user.info['city']}\n"
+                              f"Права администратора: {bool(user.info['admin_status'])}\n"
+                              )
+                    card.save(f'{message.from_user.id}.png')
+
+                    with open(f'{message.from_user.id}.png', 'rb') as f:
+                        await message.answer_photo(photo=f)
+                except Exception:
+                    pass
 
             elif message.text == '🔢Номер класса🔢':
                 await message.answer('Выберите класс', reply_markup=RangeNumberInLineButton(range(9, 12)))

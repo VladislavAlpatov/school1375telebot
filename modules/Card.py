@@ -2,6 +2,10 @@ from PIL import ImageDraw, ImageFont, Image
 
 
 class Card:
+    """
+    Если пип выёбывается:
+    pip install --compile --install-option=-O1 Pillow
+    """
     def __init__(self, color_bg_title: str = '#00ff55'):
         self.__img = Image.new('RGB', (1000, 400), '#23272a')
         self.__draw = ImageDraw.Draw(self.__img)
@@ -17,3 +21,5 @@ class Card:
 
     def save(self, name: str):
         self.__img.save(name)
+        self.__img.close()
+

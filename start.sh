@@ -2,6 +2,6 @@
 while :
 do 
 echo Запустился!
-python3 main.py
+pypy3 main.py
 echo Бот упал перезпапуск....
 done
