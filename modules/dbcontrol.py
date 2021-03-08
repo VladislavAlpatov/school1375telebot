@@ -17,7 +17,8 @@ class User:
                          'reg_date': data[4],
                          'class_number': data[5],
                          'class_char': data[6],
-                         'sent_messages_per_minute': data[7]}
+                         'sent_messages_per_minute': data[7],
+                         'city': data[8]}
 
     def ban(self, statement: bool = True):
         with self.__connection:
@@ -59,6 +60,11 @@ class User:
         with self.__connection:
             return self.__cursor.execute("UPDATE `members` SET `sent_messages_per_minute` = ? WHERE `account_id` = ?",
                                          (number, self.info['id']))
+
+    def set_city(self, city_name: str):
+        with self.__connection:
+            return self.__cursor.execute("UPDATE `members` SET `city` = ? WHERE `account_id` = ?",
+                                         (city_name, self.info['id']))
 
     def __del__(self):
         self.__connection.close()

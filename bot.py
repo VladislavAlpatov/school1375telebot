@@ -207,8 +207,7 @@ class SchoolBot(Bot):
         async def dump_db(message: types.Message):
             try:
 
-                line = message.text.split(' ')
-                with open(f"data_bases/{line[1]}", 'rb') as f:
+                with open(f"data_bases/{message.text.split(' ')}", 'rb') as f:
                     await message.answer_document(message.chat.id, f)
 
             except FileNotFoundError:
@@ -220,12 +219,12 @@ class SchoolBot(Bot):
         @self.__dp.message_handler(commands=['post'])
         @self.__permissions(admin_only=True, logging=True)
         async def post(message: types.Message):
-
             counter = 0
             db = dbcontrol.DBcontrol()
             members = db.get_all_users(skip_banned=True)
+
             try:
-                await message.answer('⏺Полезная загрузка начата...⏺')
+                await message.answer('⏺Запускаю рассылку⏺')
                 for member in members:
                     try:
                         await self.send_message(member.info['id'], message.text[6:], parse_mode='Markdown')
@@ -281,6 +280,19 @@ class SchoolBot(Bot):
                             await message.answer(f2.read(), parse_mode='Markdown')
                         return
             await message.answer('На ваш вопрос не был найден ответ 😢')
+
+        @self.__dp.message_handler(commands=['set_city'])
+        @self.__permissions(logging=True)
+        async def set_city_command(message: types.Message):
+            try:
+                city = message.text[10:]
+
+                if city:
+                    dbcontrol.User(message.from_user.id).set_city(city)
+                else:
+                    await message.answer("⛔Нет аргумента⛔")
+            except Exception as e:
+                print(e)
 
         @self.__dp.callback_query_handler()
         async def callback_inline(call: types.CallbackQuery):
@@ -340,8 +352,10 @@ class SchoolBot(Bot):
 
             elif message.text == '🌤Погода🌤':
                 try:
-                    w = self.__owm.weather_manager().weather_at_place('Москва').weather
-                    await message.answer("*Погода на сегодня.*\n\n"
+                    city = str(dbcontrol.User(message.from_user.id).info['city'])
+                    w = self.__owm.weather_manager().weather_at_place(city).weather
+
+                    await message.answer(f"*Погода в городе \"{city}\"*\n\n"
                                          f"*Статус:* {w.detailed_status}\n"
                                          f"*Температура:* {w.temperature('celsius')['temp']} ℃\n"
                                          f"*Скорость ветра:* {w.wind()['speed']} м\\с\n"
@@ -396,7 +410,8 @@ class SchoolBot(Bot):
                                      f"*Имя:* {user.info['user_name']}\n"
                                      f"*ID:* {user.info['id']}\n"
                                      f"*Класс:* {user.info['class_number']}-{user.info['class_char']}\n"
-                                     f"*Дата регистрации:* `{user.info['reg_date']}`\n\n"
+                                     f"*Дата регистрации:* `{user.info['reg_date']}`\n"
+                                     f"*Город:* {user.info['city']}\n"
                                      f"*Права администратора:* {'✅' if user.info['admin_status'] else '❌'}\n"
                                      f"*Блокировка:* {'❌' if not user.info['ban_status'] else '⚠'}\n",
                                      parse_mode='Markdown')
@@ -410,7 +425,7 @@ class SchoolBot(Bot):
             elif message.text == '🔡Буква класса🔡':
                 await message.answer('Выберите  букву класса', reply_markup=RangeNumberInLineButton('АБВГДЛМИСЭ'))
 
-        self.__eventloop.create_task(self.__request_banner(10, 15))
+        self.__eventloop.create_task(self.__request_banner(10, 10))
         self.__eventloop.create_task(self.__web_updater(360))
 
         executor.start_polling(self.__dp, skip_updates=True)
