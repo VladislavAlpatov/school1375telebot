@@ -1,4 +1,4 @@
-from modules import bot
+import bot
 import os
 # Bot(os.environ.get('TOKEN'), os.environ.get('OWN_TOKEN')).run()
 
