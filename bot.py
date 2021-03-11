@@ -49,8 +49,9 @@ class SchoolBot(Bot):
         self.__subjects = ('Физика', 'Алгебра', 'Русский язык', 'Информатика')
 
         # txt файлы
-        self.__question_files = ('school_site',
-                                 'how_to_connect_to_lesson')
+        self.__questions_dirs = ('присоедениться к уроку',
+                                 'школьный сайт',
+                                 'смена ника')
         # погодник
         presets = get_default_config()
         presets['language'] = 'ru'
@@ -291,10 +292,10 @@ class SchoolBot(Bot):
         async def ask_command(message: types.Message):
             text = message.text[4:]
 
-            for file in self.__question_files:
-                with open(f'media/text/questions/{file}.txt', encoding='utf-8') as f:
+            for directory in self.__questions_dirs:
+                with open(f'media/text/questions/{directory}/ask.txt', encoding='utf-8') as f:
                     if self.__compare(text, f.read().split('\n'), 60):
-                        with open(f'media/text/questions/{file}_answer.txt', encoding='utf-8') as f2:
+                        with open(f'media/text/questions/{directory}/answer.txt', 'r', encoding='utf-8') as f2:
                             await message.answer(f2.read(), parse_mode='Markdown')
                         return
             await message.answer('На ваш вопрос не был найден ответ 😢')
@@ -432,6 +433,7 @@ class SchoolBot(Bot):
             elif message.text == '📂Информация📂':
                 user = dbcontrol.User(message.from_user.id)
                 card = Card.Card('#40c192' if not user.info['ban_status'] else '#ea4b4b')
+
                 card.title('media/fonts/Roboto/RobotoCondensed-Bold.ttf', '#ffff', str(user.info['user_name']))
                 card.text('media/fonts/Arial/Arial bold.ttf', '#ffff', 50,
                           f"ID: {user.info['id']}\n"

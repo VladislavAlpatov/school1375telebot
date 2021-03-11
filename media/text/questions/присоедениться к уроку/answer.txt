@@ -7,4 +7,4 @@
 *7) *Вводим имя ребёнка и нажимаем на «Присоединиться сейчас».
 
 
-Подсказка: Работа Microsoft Teams стабильна при использовании браузера Google Chrome.
+Подсказка: Работа Microsoft Teams стабильна при использовании браузера [Google Chrome](https://www.google.com/intl/ru_ru/chrome/).
