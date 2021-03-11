@@ -79,15 +79,23 @@ class SchoolBot(Bot):
 
                 if member.info['sent_messages_per_minute'] >= max_requests:
                     member.ban()
+                    card = Card.Card('#bb9d2f')
                     with open('media/text/help/on_ban_message.txt', encoding='utf-8') as f:
-                        await self.send_message(member.info['id'], f.read(), parse_mode='Markdown')
 
+                        card.title('media/fonts/Roboto/RobotoCondensed-Bold.ttf', '#ffff',
+                                   "ВАША ЗАПИСЬ ЗАБЛОКИРОВАННА!")
+
+                        card.text('media/fonts/Arial/Arial bold.ttf', '#ffff', 45, f.read())
+                        card.save(f'{member.info["id"]}.png')
+
+                    with open(f'{member.info["id"]}.png', 'rb') as f:
+                        await self.send_photo(chat_id=member.info["id"], photo=f)
+
+                    os.remove(f'{member.info["id"]}.png')
                     counter += 1
-
                 member.set_user_sent_messages_per_minute(0)
 
             print(f'[BAN-LOG] Выполнена проверка на защиту от DDoS\'а, забанено {counter} записей')
-
             await asyncio.sleep(cool_down)
 
     @staticmethod
@@ -194,7 +202,7 @@ class SchoolBot(Bot):
                 user = dbcontrol.User(user_id)
 
                 card = Card.Card('#40c192' if not user.info['ban_status'] else '#ea4b4b')
-                card.title('media/fonts/Arial bold.ttf', '#ffff', 62, str(user.info['user_name']))
+                card.title('media/fonts/Arial bold.ttf', '#ffff', str(user.info['user_name']))
                 card.text('media/fonts/Arial bold.ttf', '#ffff', 50,
                           f"ID: {user.info['id']}\n"
                           f"Класс: {user.info['class_number']}-{user.info['class_char']}\n"
@@ -366,7 +374,7 @@ class SchoolBot(Bot):
                     w = self.__owm.weather_manager().weather_at_place(city).weather
 
                     card = Card.Card(color_bg_title='#2777ff')
-                    card.title('media/fonts/Arial bold.ttf', '#ffff', 62, city)
+                    card.title('media/fonts/Arial bold.ttf', '#ffff', city)
                     card.text('media/fonts/Arial bold.ttf', '#ffff', 62,
                               f'Статус: {w.detailed_status}\n'
                               f"Температура: {w.temperature('celsius')['temp']} C\n"
@@ -422,24 +430,21 @@ class SchoolBot(Bot):
                 await message.answer(f'Вы перешли в раздел «{message.text}»', reply_markup=self.__dirs[message.text])
 
             elif message.text == '📂Информация📂':
-                try:
-                    user = dbcontrol.User(message.from_user.id)
-                    card = Card.Card('#40c192' if not user.info['ban_status'] else '#ea4b4b')
-                    card.title('media/fonts/Arial bold.ttf', '#ffff', 62, str(user.info['user_name']))
-                    card.text('media/fonts/Arial bold.ttf', '#ffff', 50,
-                              f"ID: {user.info['id']}\n"
-                              f"Класс: {user.info['class_number']}-{user.info['class_char']}\n"
-                              f"Дата регистрации: {user.info['reg_date']}\n"
-                              f"Город: {user.info['city']}\n"
-                              f"Права администратора: {bool(user.info['admin_status'])}\n"
-                              )
-                    card.save(f'{message.from_user.id}.png')
+                user = dbcontrol.User(message.from_user.id)
+                card = Card.Card('#40c192' if not user.info['ban_status'] else '#ea4b4b')
+                card.title('media/fonts/Roboto/RobotoCondensed-Bold.ttf', '#ffff', str(user.info['user_name']))
+                card.text('media/fonts/Arial/Arial bold.ttf', '#ffff', 50,
+                          f"ID: {user.info['id']}\n"
+                          f"Класс: {user.info['class_number']}-{user.info['class_char']}\n"
+                          f"Дата регистрации: {user.info['reg_date']}\n"
+                          f"Город: {user.info['city']}\n"
+                          f"Права администратора: {bool(user.info['admin_status'])}\n"
+                          )
+                card.save(f'{message.from_user.id}.png')
 
-                    with open(f'{message.from_user.id}.png', 'rb') as f:
-                        await message.answer_photo(photo=f)
-                    os.remove(f'{message.from_user.id}.png')
-                except Exception:
-                    pass
+                with open(f'{message.from_user.id}.png', 'rb') as f:
+                    await message.answer_photo(photo=f)
+                os.remove(f'{message.from_user.id}.png')
 
             elif message.text == '🔢Номер класса🔢':
                 await message.answer('Выберите класс', reply_markup=RangeNumberInLineButton(range(9, 12)))
