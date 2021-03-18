@@ -86,7 +86,7 @@ class SchoolBot(Bot):
                         card.title('media/fonts/Roboto/RobotoCondensed-Bold.ttf', '#ffff',
                                    "ВАША ЗАПИСЬ ЗАБЛОКИРОВАННА!")
 
-                        card.text('media/fonts/Arial/Arial bold.ttf', '#ffff', 45, f.read())
+                        card.text('media/fonts/Arial/Arial-bold.ttf', '#ffff', 45, f.read())
                         card.save(f'{member.info["id"]}.png')
 
                     with open(f'{member.info["id"]}.png', 'rb') as f:
@@ -203,8 +203,8 @@ class SchoolBot(Bot):
                 user = dbcontrol.User(user_id)
 
                 card = Card.Card('#40c192' if not user.info['ban_status'] else '#ea4b4b')
-                card.title('media/fonts/Arial bold.ttf', '#ffff', str(user.info['user_name']))
-                card.text('media/fonts/Arial bold.ttf', '#ffff', 50,
+                card.title('media/fonts/Arial-bold.ttf', '#ffff', str(user.info['user_name']))
+                card.text('media/fonts/Arial-bold.ttf', '#ffff', 50,
                           f"ID: {user.info['id']}\n"
                           f"Класс: {user.info['class_number']}-{user.info['class_char']}\n"
                           f"Дата регистрации: {user.info['reg_date']}\n"
@@ -375,8 +375,8 @@ class SchoolBot(Bot):
                     w = self.__owm.weather_manager().weather_at_place(city).weather
 
                     card = Card.Card(color_bg_title='#2777ff')
-                    card.title('media/fonts/Arial bold.ttf', '#ffff', city)
-                    card.text('media/fonts/Arial bold.ttf', '#ffff', 62,
+                    card.title('media/fonts/Arial-bold.ttf', '#ffff', city)
+                    card.text('media/fonts/Arial-bold.ttf', '#ffff', 62,
                               f'Статус: {w.detailed_status}\n'
                               f"Температура: {w.temperature('celsius')['temp']} C\n"
                               f"Скорость ветра: {w.wind()['speed']} м\\с\n"
@@ -435,7 +435,7 @@ class SchoolBot(Bot):
                 card = Card.Card('#40c192' if not user.info['ban_status'] else '#ea4b4b')
 
                 card.title('media/fonts/Roboto/RobotoCondensed-Bold.ttf', '#ffff', str(user.info['user_name']))
-                card.text('media/fonts/Arial/Arial bold.ttf', '#ffff', 50,
+                card.text('media/fonts/Arial/Arial-bold.ttf', '#ffff', 50,
                           f"ID: {user.info['id']}\n"
                           f"Класс: {user.info['class_number']}-{user.info['class_char']}\n"
                           f"Дата регистрации: {user.info['reg_date']}\n"
