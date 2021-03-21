@@ -82,7 +82,6 @@ class SchoolBot(Bot):
                     member.ban()
                     card = Card.Card('#bb9d2f')
                     with open('media/text/help/on_ban_message.txt', encoding='utf-8') as f:
-
                         card.title('media/fonts/Roboto/RobotoCondensed-Bold.ttf', '#ffff',
                                    "ВАША ЗАПИСЬ ЗАБЛОКИРОВАННА!")
 
@@ -370,27 +369,24 @@ class SchoolBot(Bot):
                 await message.answer('В находитесь в разделе «🎲Прочее🎲».', reply_markup=self.__dirs[message.text])
 
             elif message.text == '🌤Погода🌤':
-                try:
-                    city = str(dbcontrol.User(message.from_user.id).info['city'])
-                    w = self.__owm.weather_manager().weather_at_place(city).weather
+                w = self.__owm.weather_manager().weather_at_place(
+                    dbcontrol.User(message.from_user.id).info['city']).weather
 
-                    card = Card.Card(color_bg_title='#2777ff')
-                    card.title('media/fonts/Arial-bold.ttf', '#ffff', city)
-                    card.text('media/fonts/Arial-bold.ttf', '#ffff', 62,
-                              f'Статус: {w.detailed_status}\n'
-                              f"Температура: {w.temperature('celsius')['temp']} C\n"
-                              f"Скорость ветра: {w.wind()['speed']} м\\с\n"
-                              f"Влажность: {w.humidity}%\n"
-                              f"Облачность: {w.clouds}%",
-                              )
-                    card.save(f'{message.from_user.id}.png')
+                card = Card.Card(color_bg_title='#2777ff')
+                card.title('media/fonts/Arial/Arial-bold.ttf', '#ffff', 'Москва')
+                card.text('media/fonts/Arial/Arial-bold.ttf', '#ffff', 62,
+                          f'Статус: {w.detailed_status}\n'
+                          f"Температура: {w.temperature('celsius')['temp']} C\n"
+                          f"Скорость ветра: {w.wind()['speed']} м\\с\n"
+                          f"Влажность: {w.humidity}%\n"
+                          f"Облачность: {w.clouds}%"
+                          )
+                card.save(f'{message.from_user.id}.png')
 
-                    with open(f'{message.from_user.id}.png', 'rb') as f:
-                        await message.answer_photo(photo=f)
+                with open(f'{message.from_user.id}.png', 'rb') as f:
+                    await message.answer_photo(photo=f)
 
-                    os.remove(f'{message.from_user.id}.png')
-                except Exception as e:
-                    await message.answer(f'⛔{e}⛔')
+                os.remove(f'{message.from_user.id}.png')
 
             elif message.text == '🦠COVID-19🦠':
                 with open('media/text/web/covid.txt', 'r', encoding='utf-8') as f:
